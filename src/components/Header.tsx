@@ -1,7 +1,9 @@
+
 "use client"
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ShoppingCart, User, Search, Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +29,28 @@ import {
 export function Header() {
   const { cartCount } = useCart();
   const { user, logout } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (searchQuery.trim() === '') {
+      router.push('/products');
+    } else {
+      router.push(`/products?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+  
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setSearchQuery(value);
+       if (value.trim() === '') {
+          router.push('/products');
+       } else {
+         router.push(`/products?q=${encodeURIComponent(value)}`, { scroll: false });
+       }
+  }
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -53,15 +77,21 @@ export function Header() {
           
           {/* Actions */}
           <div className="hidden md:flex items-center gap-4">
-            <div className="relative">
-              <Input type="search" placeholder="Search..." className="w-48 pr-10" />
+             <form onSubmit={handleSearch} className="relative">
+              <Input
+                type="search"
+                placeholder="Search products..."
+                className="w-48 pr-10"
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+              />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            </div>
-            <Link href="/cart">
-              <Button variant="ghost" size="icon" aria-label="Open cart">
+            </form>
+            <Link href="/cart" className="relative">
+              <Button variant="ghost" size="icon" aria-label="Open cart" className="relative">
                 <ShoppingCart className="h-6 w-6" />
                 {cartCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{cartCount}</Badge>
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0">{cartCount}</Badge>
                 )}
               </Button>
             </Link>
@@ -119,10 +149,16 @@ export function Header() {
                   <Link href="/" className="text-2xl font-bold font-headline text-primary-foreground mb-4">
                     Bombay Cloths
                   </Link>
-                  <div className="relative mb-4">
-                    <Input type="search" placeholder="Search..." className="pr-10" />
+                  <form onSubmit={handleSearch} className="relative mb-4">
+                    <Input
+                       type="search"
+                       placeholder="Search products..."
+                       className="pr-10"
+                       value={searchQuery}
+                       onChange={handleSearchInputChange}
+                    />
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  </div>
+                  </form>
                   {categories.map((category) => (
                     <Link key={category.id} href="/products" className="text-lg text-foreground/80 hover:text-foreground transition-colors">
                       {category.name}
@@ -130,11 +166,11 @@ export function Header() {
                   ))}
                   <div className="mt-auto flex flex-col gap-4">
                      <Link href="/cart">
-                        <Button variant="outline" className="w-full justify-start gap-2">
+                        <Button variant="outline" className="w-full justify-start gap-2 relative">
                            <ShoppingCart className="h-5 w-5" />
                            Cart
                            {cartCount > 0 && (
-                             <Badge variant="destructive" className="ml-auto">{cartCount}</Badge>
+                             <Badge variant="destructive" className="absolute top-1 right-2 h-5 w-5 justify-center rounded-full p-0">{cartCount}</Badge>
                            )}
                         </Button>
                      </Link>

@@ -1,6 +1,8 @@
+
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
@@ -15,7 +17,10 @@ import type { Product } from '@/lib/types';
 import { getProducts } from '@/services/productService';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function ProductsPage() {
+function ProductsPageContent() {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('q') || '';
+
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +46,11 @@ export default function ProductsPage() {
   useEffect(() => {
     let filtered = [...allProducts];
 
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+
     // Filter by price
     filtered = filtered.filter(p => p.price <= priceRange[0]);
 
@@ -54,10 +64,14 @@ export default function ProductsPage() {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-desc') {
       filtered.sort((a, b) => b.price - a.price);
+    } else {
+       // Default to newest - assuming IDs are chronological for now
+       // A proper implementation would use a timestamp
+       filtered.sort((a, b) => a.id.localeCompare(b.id));
     }
 
     setProducts(filtered);
-  }, [priceRange, selectedColors, sortBy, allProducts]);
+  }, [priceRange, selectedColors, sortBy, allProducts, searchQuery]);
   
   const handleColorChange = (color: string) => {
     setSelectedColors(prev => 
@@ -168,7 +182,7 @@ export default function ProductsPage() {
                     {products.length === 0 && (
                     <div className="text-center py-16">
                         <p className="text-xl font-semibold">No products found</p>
-                        <p className="text-muted-foreground mt-2">Try adjusting your filters.</p>
+                        <p className="text-muted-foreground mt-2">Try adjusting your filters or search term.</p>
                     </div>
                     )}
                 </>
@@ -178,5 +192,13 @@ export default function ProductsPage() {
       </div>
       <Footer />
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProductsPageContent />
+    </Suspense>
   );
 }
