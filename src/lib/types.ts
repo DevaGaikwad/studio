@@ -10,8 +10,6 @@ export type Product = {
   sizes: string[];
   imageUrl: string;
   images: string[];
-  rating: number;
-  reviews: number;
   description: string;
   aiHint: string;
 };

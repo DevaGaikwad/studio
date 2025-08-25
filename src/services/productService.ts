@@ -1,16 +1,21 @@
-import { products } from '@/lib/placeholder-data';
+import { db } from '@/lib/firebase';
 import type { Product } from '@/lib/types';
-
-// NOTE: This service uses placeholder data for prototyping in Firebase Studio.
-// For a production app, you would connect this to a database like Cloud Firestore.
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 export async function getProducts(): Promise<Product[]> {
-  // Simulate async operation
-  return Promise.resolve(products);
+  const productsCollection = collection(db, 'products');
+  const productsSnapshot = await getDocs(productsCollection);
+  const productsList = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+  return productsList;
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-    const product = products.find(p => p.id === id) || null;
-    // Simulate async operation
-    return Promise.resolve(product);
+    const productDocRef = doc(db, 'products', id);
+    const productSnap = await getDoc(productDocRef);
+
+    if (productSnap.exists()) {
+        return { id: productSnap.id, ...productSnap.data() } as Product;
+    } else {
+        return null;
+    }
 }

@@ -21,9 +21,8 @@ export default function Home() {
     const fetchProducts = async () => {
       try {
         const products = await getProducts();
-        // Get top 8 rated products for trending
-        const sorted = [...products].sort((a, b) => b.rating - a.rating);
-        setTrendingProducts(sorted.slice(0, 8));
+        // Get first 8 products for trending
+        setTrendingProducts(products.slice(0, 8));
       } catch (error) {
         console.error("Failed to fetch trending products:", error);
       } finally {

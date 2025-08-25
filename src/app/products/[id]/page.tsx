@@ -136,14 +136,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {/* Product Details */}
           <div>
             <h1 className="text-3xl font-bold font-headline mb-2">{product.name}</h1>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`h-5 w-5 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground'}`} />
-                ))}
-              </div>
-              <span className="text-muted-foreground text-sm">{product.rating} ({product.reviews} reviews)</span>
-            </div>
             <p className="text-3xl font-bold mb-6">${product.price.toFixed(2)}</p>
 
             <div className="space-y-6">

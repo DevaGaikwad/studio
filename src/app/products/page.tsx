@@ -54,8 +54,6 @@ export default function ProductsPage() {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-desc') {
       filtered.sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'rating') {
-      filtered.sort((a, b) => b.rating - a.rating);
     }
 
     setProducts(filtered);
@@ -139,7 +137,6 @@ export default function ProductsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="rating">Top Rated</SelectItem>
                   <SelectItem value="price-asc">Price: Low to High</SelectItem>
                   <SelectItem value="price-desc">Price: High to Low</SelectItem>
                 </SelectContent>
