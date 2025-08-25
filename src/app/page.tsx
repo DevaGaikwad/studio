@@ -127,3 +127,9 @@ export default function Home() {
     </div>
   );
 }
+
+declare module '@/lib/types' {
+  interface Product {
+    sizes: string[];
+  }
+}

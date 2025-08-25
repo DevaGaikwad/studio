@@ -159,5 +159,6 @@ declare module '@/lib/types' {
     reviews: number;
     description: string;
     aiHint: string;
+    sizes: string[];
   }
 }
