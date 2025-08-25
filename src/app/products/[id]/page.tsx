@@ -105,23 +105,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         ))}
                     </RadioGroup>
                 </div>
-                 {/* Size Selector */}
-                <div>
-                    <Label className="text-sm font-semibold" htmlFor="size-select">Size</Label>
-                    <Select value={selectedSize} onValueChange={setSelectedSize}>
-                        <SelectTrigger id="size-select" className="w-[180px] mt-2">
-                        <SelectValue placeholder="Select a size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {product.sizes.map(size => (
-                            <SelectItem key={size} value={size}>{size}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                </div>
             </div>
 
             <Separator className="my-8" />
+            
+            <div className="mb-6">
+                <Label className="text-sm font-semibold" htmlFor="size-select">Size</Label>
+                <Select value={selectedSize} onValueChange={setSelectedSize}>
+                    <SelectTrigger id="size-select" className="w-[180px] mt-2">
+                    <SelectValue placeholder="Select a size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {product.sizes.map(size => (
+                        <SelectItem key={size} value={size}>{size}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
             
             <Button size="lg" className="w-full mb-4" variant="destructive" onClick={handleAddToCart}>Add to Cart</Button>
 
