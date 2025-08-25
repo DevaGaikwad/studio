@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, use } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/Header';
@@ -21,9 +22,10 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { toast } = useToast()
-  const product = allProducts.find((p) => p.id === params.id);
+  const { id } = use(params);
+  const product = allProducts.find((p) => p.id === id);
   
   const [selectedImage, setSelectedImage] = useState(product?.images[0] || 'https://placehold.co/600x600.png');
   const [selectedSize, setSelectedSize] = useState(product?.sizes[0] || '');
