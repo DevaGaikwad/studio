@@ -1,3 +1,4 @@
+
 export const categories = [
   { id: 1, name: 'Men' },
   { id: 2, name: 'Women' },
@@ -220,9 +221,9 @@ export const products = [
 ];
 
 export const cartItems = [
-  { ...products[0], quantity: 1 },
-  { ...products[2], quantity: 2 },
-  { ...products[4], quantity: 1 },
+  { ...products[0], quantity: 1, selectedSize: products[0].sizes[0] },
+  { ...products[2], quantity: 2, selectedSize: products[2].sizes[1] },
+  { ...products[4], quantity: 1, selectedSize: products[4].sizes[2] },
 ];
 
 export const userAddresses = [

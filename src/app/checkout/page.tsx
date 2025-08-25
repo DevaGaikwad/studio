@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -10,15 +11,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { userAddresses, cartItems } from '@/lib/placeholder-data';
+import { userAddresses, cartItems as initialCartItems } from '@/lib/placeholder-data';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
+import type { Product } from '@/lib/types';
+
+interface CartItem extends Product {
+  quantity: number;
+  selectedSize: string;
+}
 
 export default function CheckoutPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [selectedAddress, setSelectedAddress] = useState(userAddresses.find(a => a.isDefault)?.id || userAddresses[0]?.id);
   const [showNewAddressForm, setShowNewAddressForm] = useState(userAddresses.length === 0);
+  const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
   
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = 5.00;
@@ -148,7 +156,7 @@ export default function CheckoutPage() {
                 <div className="space-y-2 text-sm">
                   {cartItems.map(item => (
                     <div key={item.id} className="flex justify-between">
-                      <span className="text-muted-foreground">{item.name} x{item.quantity}</span>
+                      <span className="text-muted-foreground">{item.name} (x{item.quantity}, {item.selectedSize})</span>
                       <span>${(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}

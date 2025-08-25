@@ -13,9 +13,17 @@ import { Separator } from '@/components/ui/separator';
 import { cartItems as initialCartItems } from '@/lib/placeholder-data';
 import { Minus, Plus, Trash2, ShoppingCart } from 'lucide-react';
 import type { Product } from '@/lib/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface CartItem extends Product {
   quantity: number;
+  selectedSize: string;
 }
 
 export default function CartPage() {
@@ -31,6 +39,14 @@ export default function CartPage() {
         )
       );
     }
+  };
+  
+  const updateSize = (productId: string, newSize: string) => {
+    setCartItems(
+      cartItems.map(item =>
+        item.id === productId ? { ...item, selectedSize: newSize } : item
+      )
+    );
   };
   
   const removeItem = (productId: string) => {
@@ -67,7 +83,20 @@ export default function CartPage() {
                         />
                         <div className="flex-grow">
                           <h3 className="font-semibold">{item.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Size: {item.selectedSize}
+                          </p>
                           <p className="text-sm text-muted-foreground">${item.price.toFixed(2)}</p>
+                           <Select value={item.selectedSize} onValueChange={(newSize) => updateSize(item.id, newSize)}>
+                                <SelectTrigger className="w-[120px] mt-2 h-8 text-xs">
+                                <SelectValue placeholder="Select a size" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                {item.sizes.map(size => (
+                                    <SelectItem key={size} value={size}>{size}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
