@@ -56,6 +56,57 @@ export function Header() {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   }
+  
+  const userActions = (
+    <>
+      <Link href="/cart" passHref>
+        <Button variant="ghost" size="icon" aria-label="Open cart" className="relative">
+          <ShoppingCart className="h-6 w-6" />
+          {cartCount > 0 && (
+            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0">{cartCount}</Badge>
+          )}
+        </Button>
+      </Link>
+      
+      {user ? (
+         <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user.email}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/orders" className="flex items-center w-full cursor-pointer">
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                <span>My Orders</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={logout} className="cursor-pointer">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <Link href="/login" passHref>
+          <Button>Login</Button>
+        </Link>
+      )}
+    </>
+  );
 
   return (
     <header className="bg-card shadow-sm sticky top-0 z-40">
@@ -75,7 +126,7 @@ export function Header() {
             ))}
           </nav>
           
-          {/* Actions */}
+          {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-4">
              <form onSubmit={handleSearch} className="relative">
               <Input
@@ -87,56 +138,12 @@ export function Header() {
               />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             </form>
-            <Link href="/cart" className="relative">
-              <Button variant="ghost" size="icon" aria-label="Open cart" className="relative">
-                <ShoppingCart className="h-6 w-6" />
-                {cartCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0">{cartCount}</Badge>
-                )}
-              </Button>
-            </Link>
-            
-            {user ? (
-               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
-                      <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.displayName}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Link href="/orders" className="flex items-center w-full">
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      <span>My Orders</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={logout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link href="/login">
-                <Button>Login</Button>
-              </Link>
-            )}
+            {userActions}
           </div>
           
-          {/* Mobile Navigation Trigger */}
-          <div className="md:hidden">
+          {/* Mobile Actions & Navigation Trigger */}
+          <div className="md:hidden flex items-center gap-2">
+            {userActions}
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -164,33 +171,14 @@ export function Header() {
                       {category.name}
                     </Link>
                   ))}
-                  <div className="mt-auto flex flex-col gap-4">
-                     <Link href="/cart">
-                        <Button variant="outline" className="w-full justify-start gap-2 relative">
-                           <ShoppingCart className="h-5 w-5" />
-                           Cart
-                           {cartCount > 0 && (
-                             <Badge variant="destructive" className="absolute top-1 right-2 h-5 w-5 justify-center rounded-full p-0">{cartCount}</Badge>
-                           )}
-                        </Button>
-                     </Link>
-                     {user ? (
-                        <>
-                           <Link href="/orders">
-                               <Button variant="outline" className="w-full justify-start gap-2">
-                                  <ShoppingCart className="h-5 w-5" />
-                                  My Orders
-                               </Button>
-                           </Link>
-                           <Button onClick={logout} className="w-full justify-start gap-2">
-                                <LogOut className="h-5 w-5" />
-                                Logout
+                  <div className="border-t pt-6 mt-auto flex flex-col gap-4">
+                     {user && (
+                       <Link href="/orders">
+                           <Button variant="outline" className="w-full justify-start gap-2">
+                              <ShoppingCart className="h-5 w-5" />
+                              My Orders
                            </Button>
-                        </>
-                     ) : (
-                        <Link href="/login">
-                          <Button className="w-full">Login</Button>
-                        </Link>
+                       </Link>
                      )}
                   </div>
                 </nav>
