@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -11,22 +10,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { userAddresses, cartItems as initialCartItems } from '@/lib/placeholder-data';
+import { userAddresses } from '@/lib/placeholder-data';
+import { useCart } from '@/context/CartContext';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
-import type { Product } from '@/lib/types';
-
-interface CartItem extends Product {
-  quantity: number;
-  selectedSize: string;
-}
 
 export default function CheckoutPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { cartItems, clearCart } = useCart();
   const [selectedAddress, setSelectedAddress] = useState(userAddresses.find(a => a.isDefault)?.id || userAddresses[0]?.id);
   const [showNewAddressForm, setShowNewAddressForm] = useState(userAddresses.length === 0);
-  const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
   
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = 5.00;
@@ -38,6 +32,7 @@ export default function CheckoutPage() {
       title: "Order Placed!",
       description: "Thank you for your purchase. You will be redirected to your orders page.",
     });
+    clearCart();
     setTimeout(() => {
         router.push('/orders');
     }, 2000);
@@ -155,7 +150,7 @@ export default function CheckoutPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2 text-sm">
                   {cartItems.map(item => (
-                    <div key={item.id} className="flex justify-between">
+                    <div key={item.cartItemId} className="flex justify-between">
                       <span className="text-muted-foreground">{item.name} (x{item.quantity}, {item.selectedSize})</span>
                       <span>${(item.price * item.quantity).toFixed(2)}</span>
                     </div>
@@ -183,7 +178,7 @@ export default function CheckoutPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                 <Button size="lg" className="w-full" variant="destructive" onClick={handlePlaceOrder}>
+                 <Button size="lg" className="w-full" variant="destructive" onClick={handlePlaceOrder} disabled={cartItems.length === 0}>
                     Place Order
                   </Button>
               </CardFooter>

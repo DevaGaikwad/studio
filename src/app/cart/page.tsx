@@ -1,7 +1,6 @@
-
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
@@ -10,9 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { cartItems as initialCartItems } from '@/lib/placeholder-data';
+import { useCart } from '@/context/CartContext';
 import { Minus, Plus, Trash2, ShoppingCart } from 'lucide-react';
-import type { Product } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -21,37 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-interface CartItem extends Product {
-  quantity: number;
-  selectedSize: string;
-}
-
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>(initialCartItems);
-
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity < 1) {
-      setCartItems(cartItems.filter(item => item.id !== productId));
-    } else {
-      setCartItems(
-        cartItems.map(item =>
-          item.id === productId ? { ...item, quantity: newQuantity } : item
-        )
-      );
-    }
-  };
-  
-  const updateSize = (productId: string, newSize: string) => {
-    setCartItems(
-      cartItems.map(item =>
-        item.id === productId ? { ...item, selectedSize: newSize } : item
-      )
-    );
-  };
-  
-  const removeItem = (productId: string) => {
-    setCartItems(cartItems.filter(item => item.id !== productId));
-  };
+  const { cartItems, updateQuantity, updateSize, removeItem } = useCart();
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = subtotal > 0 ? 5.00 : 0;
@@ -71,7 +40,7 @@ export default function CartPage() {
               <Card>
                 <CardContent className="p-6 space-y-6">
                   {cartItems.map((item) => (
-                    <div key={item.id}>
+                    <div key={item.cartItemId}>
                       <div className="flex items-center gap-4">
                         <Image
                           src={item.imageUrl}
@@ -83,11 +52,8 @@ export default function CartPage() {
                         />
                         <div className="flex-grow">
                           <h3 className="font-semibold">{item.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Size: {item.selectedSize}
-                          </p>
                           <p className="text-sm text-muted-foreground">${item.price.toFixed(2)}</p>
-                           <Select value={item.selectedSize} onValueChange={(newSize) => updateSize(item.id, newSize)}>
+                           <Select value={item.selectedSize} onValueChange={(newSize) => updateSize(item.cartItemId, newSize)}>
                                 <SelectTrigger className="w-[120px] mt-2 h-8 text-xs">
                                 <SelectValue placeholder="Select a size" />
                                 </SelectTrigger>
@@ -99,18 +65,18 @@ export default function CartPage() {
                             </Select>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}>
                             <Minus className="h-4 w-4" />
                           </Button>
                           <Input readOnly value={item.quantity} className="h-8 w-12 text-center" />
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}>
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
                         <p className="font-semibold w-20 text-right">
                           ${(item.price * item.quantity).toFixed(2)}
                         </p>
-                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.id)}>
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.cartItemId)}>
                           <Trash2 className="h-5 w-5" />
                         </Button>
                       </div>
@@ -165,20 +131,4 @@ export default function CartPage() {
       <Footer />
     </div>
   );
-}
-
-// Add a dummy Product type to lib/types.ts or similar to avoid TS errors
-declare module '@/lib/types' {
-  interface Product {
-    id: string;
-    name: string;
-    price: number;
-    category: string;
-    color: string;
-    imageUrl: string;
-    rating: number;
-    reviews: number;
-    description: string;
-    aiHint: string;
-  }
 }

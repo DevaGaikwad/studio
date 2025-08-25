@@ -1,12 +1,13 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { ShoppingCart, User, Search, Menu, X } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { categories } from '@/lib/placeholder-data';
+import { useCart } from '@/context/CartContext';
 import {
   Sheet,
   SheetContent,
@@ -14,12 +15,7 @@ import {
 } from "@/components/ui/sheet"
 
 export function Header() {
-  const [cartCount, setCartCount] = useState(0);
-
-  // This should be replaced with actual cart logic
-  useEffect(() => {
-    setCartCount(3);
-  }, []);
+  const { cartCount } = useCart();
 
   return (
     <header className="bg-card shadow-sm sticky top-0 z-40">

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, use } from 'react';
@@ -11,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { products as allProducts, productFilters } from '@/lib/placeholder-data';
 import { Star, Truck } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast"
+import { useCart } from '@/context/CartContext';
 import {
   Select,
   SelectContent,
@@ -23,7 +22,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { toast } = useToast()
+  const { addToCart } = useCart();
   const { id } = use(params);
   const product = allProducts.find((p) => p.id === id);
   
@@ -36,10 +35,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   }
 
   const handleAddToCart = () => {
-    toast({
-      title: "Added to cart!",
-      description: `${product.name} has been added to your cart.`,
-    })
+    if (selectedSize) {
+        addToCart(product, selectedSize);
+    }
   }
 
   return (

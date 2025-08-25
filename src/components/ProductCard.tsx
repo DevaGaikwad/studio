@@ -5,32 +5,23 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from '@/components/ui/label';
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  aiHint: string;
-  sizes: string[];
-};
+import { useCart } from '@/context/CartContext';
+import type { Product } from '@/lib/types';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { toast } = useToast();
+  const { addToCart } = useCart();
   const [selectedSize, setSelectedSize] = useState(product.sizes[0] || '');
 
   const handleAddToCart = () => {
-    toast({
-      title: "Added to cart!",
-      description: `${product.name} (Size: ${selectedSize}) has been added to your cart.`,
-    })
+    if (selectedSize) {
+      addToCart(product, selectedSize);
+    }
   }
 
   return (
