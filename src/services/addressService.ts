@@ -1,19 +1,24 @@
-import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
 import type { Address } from '@/lib/types';
 
-// Stores addresses in a subcollection under the user's document
-// /users/{userId}/addresses/{addressId}
+// NOTE: This service uses browser localStorage for prototyping in Firebase Studio.
+// For a production app, you would connect this to a database like Cloud Firestore.
+
+const getAddressesKey = (userId: string) => `addresses_${userId}`;
 
 export async function addAddress(userId: string, addressData: Omit<Address, 'id'>): Promise<string> {
-    const addressesCollection = collection(db, 'users', userId, 'addresses');
-    const docRef = await addDoc(addressesCollection, addressData);
-    return docRef.id;
+    const addresses = await getAddresses(userId);
+    const newAddress: Address = {
+        ...addressData,
+        id: `addr_${Date.now()}`
+    };
+    const updatedAddresses = [...addresses, newAddress];
+    localStorage.setItem(getAddressesKey(userId), JSON.stringify(updatedAddresses));
+    return Promise.resolve(newAddress.id);
 }
 
 export async function getAddresses(userId: string): Promise<Address[]> {
-    const addressesCollection = collection(db, 'users', userId, 'addresses');
-    const addressSnapshot = await getDocs(addressesCollection);
-    const addressList = addressSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Address));
-    return addressList;
+    if (typeof window === 'undefined') return Promise.resolve([]);
+    const addressesJson = localStorage.getItem(getAddressesKey(userId));
+    const addresses = addressesJson ? JSON.parse(addressesJson) : [];
+    return Promise.resolve(addresses);
 }
