@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/Header';
@@ -8,7 +8,7 @@ import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { products as allProducts, productFilters } from '@/lib/placeholder-data';
+import { productFilters } from '@/lib/placeholder-data';
 import { Star, Truck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import {
@@ -20,18 +20,76 @@ import {
 } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { getProductById } from '@/services/productService';
+import type { Product } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { addToCart } = useCart();
   const { id } = use(params);
-  const product = allProducts.find((p) => p.id === id);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  const [selectedImage, setSelectedImage] = useState(product?.images[0] || 'https://placehold.co/600x600.png');
-  const [selectedSize, setSelectedSize] = useState(product?.sizes[0] || '');
-  const [selectedColor, setSelectedColor] = useState(product?.color || '');
+  const [selectedImage, setSelectedImage] = useState('');
+  const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
 
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const fetchedProduct = await getProductById(id);
+        if (fetchedProduct) {
+          setProduct(fetchedProduct);
+          setSelectedImage(fetchedProduct.images[0] || 'https://placehold.co/600x600.png');
+          setSelectedSize(fetchedProduct.sizes[0] || '');
+          setSelectedColor(fetchedProduct.color || '');
+        } else {
+          notFound();
+        }
+      } catch (error) {
+        console.error("Failed to fetch product:", error);
+        notFound();
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+       <div className="bg-secondary">
+        <Header />
+         <div className="container mx-auto px-4 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+               <div>
+                  <Skeleton className="aspect-square w-full rounded-lg" />
+                  <div className="grid grid-cols-5 gap-2 mt-4">
+                     {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-square w-full rounded-md" />)}
+                  </div>
+               </div>
+               <div className="space-y-6">
+                  <Skeleton className="h-8 w-3/4" />
+                  <Skeleton className="h-6 w-1/4" />
+                  <Skeleton className="h-10 w-1/2" />
+                  <Separator />
+                  <div className="space-y-4">
+                     <Skeleton className="h-6 w-1/4" />
+                     <Skeleton className="h-10 w-1/2" />
+                  </div>
+                   <Skeleton className="h-12 w-full" />
+               </div>
+            </div>
+         </div>
+        <Footer />
+       </div>
+    );
+  }
+  
   if (!product) {
-    notFound();
+    // This will be handled by the notFound() in useEffect, but as a fallback
+    return notFound();
   }
 
   const handleAddToCart = () => {
@@ -121,7 +179,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 </Select>
             </div>
             
-            <Button size="lg" className="w-full mb-4" variant="destructive" onClick={handleAddToCart}>Add to Cart</Button>
+            <Button size="lg" className="w-full mb-4" variant="destructive" onClick={handleAddToCart} disabled={!selectedSize}>Add to Cart</Button>
 
             <Card className="mt-6">
               <CardContent className="p-4 space-y-4 text-sm">

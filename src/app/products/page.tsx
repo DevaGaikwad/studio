@@ -10,17 +10,36 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { products as allProducts, productFilters } from '@/lib/placeholder-data';
+import { productFilters } from '@/lib/placeholder-data';
 import type { Product } from '@/lib/types';
+import { getProducts } from '@/services/productService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(allProducts);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [priceRange, setPriceRange] = useState<[number]>([productFilters.priceRange.max]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => {
-    let filtered = allProducts;
+    const fetchProducts = async () => {
+      try {
+        const productsFromDb = await getProducts();
+        setAllProducts(productsFromDb);
+        setProducts(productsFromDb);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    let filtered = [...allProducts];
 
     // Filter by price
     filtered = filtered.filter(p => p.price <= priceRange[0]);
@@ -40,7 +59,7 @@ export default function ProductsPage() {
     }
 
     setProducts(filtered);
-  }, [priceRange, selectedColors, sortBy]);
+  }, [priceRange, selectedColors, sortBy, allProducts]);
   
   const handleColorChange = (color: string) => {
     setSelectedColors(prev => 
@@ -113,7 +132,7 @@ export default function ProductsPage() {
           {/* Product Grid */}
           <main className="lg:col-span-3">
             <div className="flex justify-between items-center mb-6">
-              <p className="text-muted-foreground">{products.length} products</p>
+              <p className="text-muted-foreground">{loading ? 'Loading...' : `${products.length} products`}</p>
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort by" />
@@ -127,16 +146,35 @@ export default function ProductsPage() {
               </Select>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-            {products.length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-xl font-semibold">No products found</p>
-                <p className="text-muted-foreground mt-2">Try adjusting your filters.</p>
-              </div>
+            {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {[...Array(6)].map((_, i) => (
+                        <Card key={i}>
+                            <Skeleton className="h-64 w-full" />
+                            <CardContent className="p-4 space-y-2">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-4 w-1/2" />
+                            </CardContent>
+                            <CardFooter className="p-4">
+                                <Skeleton className="h-10 w-full" />
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            ) : (
+                <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {products.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                    </div>
+                    {products.length === 0 && (
+                    <div className="text-center py-16">
+                        <p className="text-xl font-semibold">No products found</p>
+                        <p className="text-muted-foreground mt-2">Try adjusting your filters.</p>
+                    </div>
+                    )}
+                </>
             )}
           </main>
         </div>
@@ -144,21 +182,4 @@ export default function ProductsPage() {
       <Footer />
     </div>
   );
-}
-
-// Add a dummy Product type to lib/types.ts or similar to avoid TS errors
-declare module '@/lib/types' {
-  interface Product {
-    id: string;
-    name: string;
-    price: number;
-    category: string;
-    color: string;
-    imageUrl: string;
-    rating: number;
-    reviews: number;
-    description: string;
-    aiHint: string;
-    sizes: string[];
-  }
 }

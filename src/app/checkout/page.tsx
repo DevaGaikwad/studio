@@ -14,17 +14,21 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from "@/hooks/use-toast";
 import type { Address, Order } from '@/lib/types';
+import { addAddress, getAddresses } from '@/services/addressService';
+import { addOrder } from '@/services/orderService';
 
 export default function CheckoutPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { cartItems, clearCart } = useCart();
   
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(undefined);
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   
   const [newAddress, setNewAddress] = useState({
       name: '',
@@ -37,19 +41,34 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!authLoading && !user) {
+      router.push('/login?redirect=/checkout');
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
   
   useEffect(() => {
-    // In a real app, fetch addresses from a database
-    // For now, we'll start with an empty list
-    setShowNewAddressForm(addresses.length === 0);
-    if(addresses.length > 0 && !selectedAddressId) {
-        setSelectedAddressId(addresses[0].id);
+    if (user) {
+      const fetchAddresses = async () => {
+        try {
+          setLoadingAddresses(true);
+          const userAddresses = await getAddresses(user.uid);
+          setAddresses(userAddresses);
+          if (userAddresses.length > 0) {
+            setSelectedAddressId(userAddresses[0].id);
+            setShowNewAddressForm(false);
+          } else {
+            setShowNewAddressForm(true);
+          }
+        } catch (error) {
+          console.error("Failed to fetch addresses:", error);
+          toast({ variant: "destructive", title: "Error", description: "Could not fetch addresses." });
+        } finally {
+          setLoadingAddresses(false);
+        }
+      };
+      fetchAddresses();
     }
-  }, [addresses.length, selectedAddressId]);
+  }, [user, toast]);
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = 5.00;
@@ -61,20 +80,30 @@ export default function CheckoutPage() {
     setNewAddress(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleSaveAddress = () => {
-    if(Object.values(newAddress).some(field => field.trim() === '')) {
-        toast({ variant: "destructive", title: "Error", description: "Please fill all address fields." });
+  const handleSaveAddress = async () => {
+    if (!user) return;
+    if (Object.values(newAddress).some(field => field.trim() === '' && field !== newAddress.addressLine2)) {
+        toast({ variant: "destructive", title: "Error", description: "Please fill all required address fields." });
         return;
     }
-    const newAddr: Address = { ...newAddress, id: `addr_${Date.now()}` };
-    setAddresses(prev => [...prev, newAddr]);
-    setSelectedAddressId(newAddr.id);
-    setShowNewAddressForm(false);
-    setNewAddress({ name: '', addressLine1: '', addressLine2: '', city: '', state: '', zip: '', country: 'USA' });
-    toast({ title: "Address saved!" });
+    try {
+      const newAddrId = await addAddress(user.uid, newAddress);
+      const newAddrWithId = { ...newAddress, id: newAddrId };
+      setAddresses(prev => [...prev, newAddrWithId]);
+      setSelectedAddressId(newAddrWithId.id);
+      setShowNewAddressForm(false);
+      setNewAddress({ name: '', addressLine1: '', addressLine2: '', city: '', state: '', zip: '', country: 'USA' });
+      toast({ title: "Address saved!" });
+    } catch(error) {
+      toast({ variant: "destructive", title: "Error", description: "Could not save address." });
+    }
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
+    if (!user) {
+        toast({ variant: "destructive", title: "Error", description: "You must be logged in to place an order." });
+        return;
+    }
     if (!selectedAddressId) {
         toast({ variant: "destructive", title: "Error", description: "Please select a shipping address." });
         return;
@@ -86,9 +115,8 @@ export default function CheckoutPage() {
         return;
     }
 
-    const newOrder: Order = {
-        id: `ORD-${Date.now()}`,
-        date: new Date().toISOString(),
+    const newOrder: Omit<Order, 'id' | 'date'> = {
+        userId: user.uid,
         status: 'Processing',
         total: total,
         items: cartItems,
@@ -96,23 +124,26 @@ export default function CheckoutPage() {
         paymentMethod: paymentMethod,
     };
     
-    // Save order to localStorage to be displayed on orders page
-    const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    localStorage.setItem('orders', JSON.stringify([newOrder, ...existingOrders]));
-
-    toast({
-      title: "Order Placed!",
-      description: "Thank you for your purchase. Redirecting to your orders...",
-    });
-    
-    clearCart();
-    
-    setTimeout(() => {
-        router.push('/orders');
-    }, 2000);
+    setIsPlacingOrder(true);
+    try {
+        await addOrder(newOrder);
+        toast({
+            title: "Order Placed!",
+            description: "Thank you for your purchase. Redirecting to your orders...",
+        });
+        clearCart();
+        setTimeout(() => {
+            router.push('/orders');
+        }, 2000);
+    } catch (error) {
+        console.error("Failed to place order:", error);
+        toast({ variant: "destructive", title: "Error", description: "There was a problem placing your order." });
+    } finally {
+        setIsPlacingOrder(false);
+    }
   };
   
-  if (loading || !user) {
+  if (authLoading || !user) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
@@ -132,7 +163,9 @@ export default function CheckoutPage() {
                   <CardTitle>Shipping Address</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {!showNewAddressForm && addresses.length > 0 && (
+                  {loadingAddresses ? (
+                    <p>Loading addresses...</p>
+                  ) : !showNewAddressForm && addresses.length > 0 ? (
                     <RadioGroup value={selectedAddressId} onValueChange={setSelectedAddressId}>
                       {addresses.map((address) => (
                         <Label key={address.id} htmlFor={address.id} className="flex items-start space-x-4 p-4 border rounded-md has-[:checked]:bg-accent has-[:checked]:border-primary cursor-pointer">
@@ -145,7 +178,7 @@ export default function CheckoutPage() {
                         </Label>
                       ))}
                     </RadioGroup>
-                  )}
+                  ) : null}
                   {showNewAddressForm && (
                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="sm:col-span-2">
@@ -267,8 +300,8 @@ export default function CheckoutPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                 <Button size="lg" className="w-full" variant="destructive" onClick={handlePlaceOrder} disabled={cartItems.length === 0 || loading}>
-                    Place Order
+                 <Button size="lg" className="w-full" variant="destructive" onClick={handlePlaceOrder} disabled={cartItems.length === 0 || isPlacingOrder || loadingAddresses}>
+                    {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
                   </Button>
               </CardFooter>
             </Card>

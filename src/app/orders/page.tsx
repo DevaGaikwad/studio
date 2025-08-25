@@ -13,24 +13,55 @@ import type { Order } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ShoppingBag } from 'lucide-react';
+import { getOrders } from '@/services/orderService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const { user, loading } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!authLoading && !user) {
+      router.push('/login?redirect=/orders');
     } else if (user) {
-       const storedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-       setOrders(storedOrders);
+       const fetchOrders = async () => {
+         try {
+           setLoading(true);
+           const userOrders = await getOrders(user.uid);
+           setOrders(userOrders);
+         } catch (error) {
+           console.error("Failed to fetch orders:", error);
+         } finally {
+           setLoading(false);
+         }
+       };
+       fetchOrders();
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
 
 
-  if (loading || !user) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  if (authLoading || loading) {
+    return (
+      <div className="bg-secondary min-h-screen">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+           <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold font-headline">My Orders</h1>
+            <p className="text-muted-foreground mt-2">View your order history and track current orders.</p>
+           </div>
+           <Card>
+             <CardContent className="p-6 space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))}
+             </CardContent>
+           </Card>
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
   return (
@@ -51,7 +82,7 @@ export default function OrdersPage() {
                     <AccordionTrigger className="p-6 hover:no-underline">
                       <div className="flex justify-between items-center w-full">
                         <div className="text-left">
-                          <p className="font-semibold">Order ID: {order.id}</p>
+                          <p className="font-semibold">Order ID: {order.id.slice(0,8)}...</p>
                           <p className="text-sm text-muted-foreground">
                             Date: {format(new Date(order.date), 'PPP')}
                           </p>

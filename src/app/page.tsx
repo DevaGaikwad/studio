@@ -1,13 +1,38 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { products } from '@/lib/placeholder-data';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ProductCard } from '@/components/ProductCard';
+import { getProducts } from '@/services/productService';
+import type { Product } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 export default function Home() {
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const products = await getProducts();
+        // Get top 8 rated products for trending
+        const sorted = [...products].sort((a, b) => b.rating - a.rating);
+        setTrendingProducts(sorted.slice(0, 8));
+      } catch (error) {
+        console.error("Failed to fetch trending products:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
+
   return (
     <div className="bg-background">
       <Header />
@@ -27,8 +52,8 @@ export default function Home() {
                   <Image
                     src="https://placehold.co/1600x600.png"
                     alt="Hero Banner 1"
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    style={{objectFit:"cover"}}
                     data-ai-hint="fashion sale banner"
                   />
                   <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center text-white p-4">
@@ -43,8 +68,8 @@ export default function Home() {
                   <Image
                     src="https://placehold.co/1600x600.png"
                     alt="Hero Banner 2"
-                    layout="fill"
-                    objectFit="cover"
+                    fill
+                    style={{objectFit:"cover"}}
                     data-ai-hint="clothing collection model"
                   />
                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center text-white p-4">
@@ -115,21 +140,32 @@ export default function Home() {
         <section className="py-16 bg-secondary">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-headline font-bold text-center mb-8">Trending Products</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-              {products.slice(0, 8).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                    {[...Array(8)].map((_, i) => (
+                        <Card key={i}>
+                            <Skeleton className="h-64 w-full" />
+                            <CardContent className="p-4 space-y-2">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-4 w-1/2" />
+                            </CardContent>
+                            <CardFooter className="p-4">
+                                <Skeleton className="h-10 w-full" />
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {trendingProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                ))}
+                </div>
+            )}
           </div>
         </section>
       </main>
       <Footer />
     </div>
   );
-}
-
-declare module '@/lib/types' {
-  interface Product {
-    sizes: string[];
-  }
 }

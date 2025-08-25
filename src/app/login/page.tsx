@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,8 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '/';
   const { login } = useAuth();
   const { toast } = useToast();
 
@@ -36,7 +38,7 @@ export default function LoginPage() {
     try {
       await login(values.email, values.password);
       toast({ title: 'Login successful!' });
-      router.push('/');
+      router.push(redirectUrl);
     } catch (error: any) {
       toast({
         variant: 'destructive',

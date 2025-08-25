@@ -1,4 +1,5 @@
 import { CartItem } from "@/context/CartContext";
+import { Timestamp } from "firebase/firestore";
 
 export type Product = {
   id: string;
@@ -28,10 +29,16 @@ export type Address = {
 
 export type Order = {
     id: string;
-    date: string;
+    userId: string;
+    date: string; // Should be ISO string
     status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
     total: number;
     items: CartItem[];
     shippingAddress: Address;
     paymentMethod: string;
+};
+
+// This is the type for data coming from Firestore
+export type OrderFromDB = Omit<Order, 'date'> & {
+  date: Timestamp;
 };
