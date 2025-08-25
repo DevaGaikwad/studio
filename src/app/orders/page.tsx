@@ -1,3 +1,6 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -5,10 +8,31 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { pastOrders } from '@/lib/placeholder-data';
 import { format } from 'date-fns';
+import type { Order } from '@/lib/types';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { ShoppingBag } from 'lucide-react';
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    } else if (user) {
+       const storedOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+       setOrders(storedOrders);
+    }
+  }, [user, loading, router]);
+
+
+  if (loading || !user) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
   return (
     <div className="bg-secondary min-h-screen">
       <Header />
@@ -18,11 +42,11 @@ export default function OrdersPage() {
           <p className="text-muted-foreground mt-2">View your order history and track current orders.</p>
         </div>
         
-        {pastOrders.length > 0 ? (
+        {orders.length > 0 ? (
           <Card>
             <CardContent className="p-0">
-              <Accordion type="single" collapsible className="w-full">
-                {pastOrders.map((order) => (
+              <Accordion type="single" collapsible className="w-full" defaultValue={orders[0].id}>
+                {orders.map((order) => (
                   <AccordionItem key={order.id} value={order.id}>
                     <AccordionTrigger className="p-6 hover:no-underline">
                       <div className="flex justify-between items-center w-full">
@@ -47,7 +71,7 @@ export default function OrdersPage() {
                           <h4 className="font-semibold mb-2">Items</h4>
                           <div className="space-y-4">
                             {order.items.map((item) => (
-                              <div key={item.id} className="flex items-center gap-4">
+                              <div key={item.cartItemId} className="flex items-center gap-4">
                                 <Image
                                   src={item.imageUrl}
                                   alt={item.name}
@@ -57,10 +81,10 @@ export default function OrdersPage() {
                                   data-ai-hint={item.aiHint}
                                 />
                                 <div>
-                                  <p className="font-medium">{item.name}</p>
+                                  <p className="font-medium">{item.name} ({item.selectedSize})</p>
                                   <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                                 </div>
-                                <p className="ml-auto font-medium">${item.price.toFixed(2)}</p>
+                                <p className="ml-auto font-medium">${(item.price * item.quantity).toFixed(2)}</p>
                               </div>
                             ))}
                           </div>
@@ -73,6 +97,8 @@ export default function OrdersPage() {
                             {order.shippingAddress.addressLine2 && <p>{order.shippingAddress.addressLine2}</p>}
                             <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}</p>
                           </div>
+                           <h4 className="font-semibold mb-2 mt-4">Payment</h4>
+                           <p className="text-sm text-muted-foreground">Paid via {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Card/Razorpay'}</p>
                         </div>
                       </div>
                     </AccordionContent>
@@ -83,7 +109,8 @@ export default function OrdersPage() {
           </Card>
         ) : (
           <div className="text-center py-16">
-            <h2 className="text-2xl font-semibold">No orders yet</h2>
+            <ShoppingBag className="mx-auto h-24 w-24 text-muted-foreground" />
+            <h2 className="text-2xl font-semibold mt-6">No orders yet</h2>
             <p className="mt-2 text-muted-foreground">You haven't placed any orders with us. Let's change that!</p>
           </div>
         )}
@@ -91,19 +118,4 @@ export default function OrdersPage() {
       <Footer />
     </div>
   );
-}
-
-declare module '@/lib/types' {
-  interface Product {
-    id: string;
-    name: string;
-    price: number;
-    category: string;
-    color: string;
-    imageUrl: string;
-    rating: number;
-    reviews: number;
-    description: string;
-    aiHint: string;
-  }
 }

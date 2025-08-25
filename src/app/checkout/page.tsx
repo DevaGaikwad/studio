@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -10,33 +10,111 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { userAddresses } from '@/lib/placeholder-data';
 import { useCart } from '@/context/CartContext';
-import { useToast } from "@/hooks/use-toast"
-import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from "@/hooks/use-toast";
+import type { Address, Order } from '@/lib/types';
 
 export default function CheckoutPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { user, loading } = useAuth();
   const { cartItems, clearCart } = useCart();
-  const [selectedAddress, setSelectedAddress] = useState(userAddresses.find(a => a.isDefault)?.id || userAddresses[0]?.id);
-  const [showNewAddressForm, setShowNewAddressForm] = useState(userAddresses.length === 0);
   
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(undefined);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('card');
+  
+  const [newAddress, setNewAddress] = useState({
+      name: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: 'USA'
+  });
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+  
+  useEffect(() => {
+    // In a real app, fetch addresses from a database
+    // For now, we'll start with an empty list
+    setShowNewAddressForm(addresses.length === 0);
+    if(addresses.length > 0 && !selectedAddressId) {
+        setSelectedAddressId(addresses[0].id);
+    }
+  }, [addresses.length, selectedAddressId]);
+
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = 5.00;
   const taxes = subtotal * 0.08;
   const total = subtotal + shipping + taxes;
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setNewAddress(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSaveAddress = () => {
+    if(Object.values(newAddress).some(field => field.trim() === '')) {
+        toast({ variant: "destructive", title: "Error", description: "Please fill all address fields." });
+        return;
+    }
+    const newAddr: Address = { ...newAddress, id: `addr_${Date.now()}` };
+    setAddresses(prev => [...prev, newAddr]);
+    setSelectedAddressId(newAddr.id);
+    setShowNewAddressForm(false);
+    setNewAddress({ name: '', addressLine1: '', addressLine2: '', city: '', state: '', zip: '', country: 'USA' });
+    toast({ title: "Address saved!" });
+  };
+
   const handlePlaceOrder = () => {
+    if (!selectedAddressId) {
+        toast({ variant: "destructive", title: "Error", description: "Please select a shipping address." });
+        return;
+    }
+
+    const shippingAddress = addresses.find(a => a.id === selectedAddressId);
+    if (!shippingAddress) {
+        toast({ variant: "destructive", title: "Error", description: "Selected address not found." });
+        return;
+    }
+
+    const newOrder: Order = {
+        id: `ORD-${Date.now()}`,
+        date: new Date().toISOString(),
+        status: 'Processing',
+        total: total,
+        items: cartItems,
+        shippingAddress: shippingAddress,
+        paymentMethod: paymentMethod,
+    };
+    
+    // Save order to localStorage to be displayed on orders page
+    const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+    localStorage.setItem('orders', JSON.stringify([newOrder, ...existingOrders]));
+
     toast({
       title: "Order Placed!",
-      description: "Thank you for your purchase. You will be redirected to your orders page.",
+      description: "Thank you for your purchase. Redirecting to your orders...",
     });
+    
     clearCart();
+    
     setTimeout(() => {
         router.push('/orders');
     }, 2000);
   };
+  
+  if (loading || !user) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
 
   return (
     <div className="bg-secondary">
@@ -54,10 +132,10 @@ export default function CheckoutPage() {
                   <CardTitle>Shipping Address</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {!showNewAddressForm && (
-                    <RadioGroup value={selectedAddress} onValueChange={setSelectedAddress}>
-                      {userAddresses.map((address) => (
-                        <Label key={address.id} htmlFor={address.id} className="flex items-start space-x-4 p-4 border rounded-md has-[:checked]:bg-accent has-[:checked]:border-primary">
+                  {!showNewAddressForm && addresses.length > 0 && (
+                    <RadioGroup value={selectedAddressId} onValueChange={setSelectedAddressId}>
+                      {addresses.map((address) => (
+                        <Label key={address.id} htmlFor={address.id} className="flex items-start space-x-4 p-4 border rounded-md has-[:checked]:bg-accent has-[:checked]:border-primary cursor-pointer">
                           <RadioGroupItem value={address.id} id={address.id} />
                           <div>
                             <p className="font-semibold">{address.name}</p>
@@ -72,31 +150,35 @@ export default function CheckoutPage() {
                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="sm:col-span-2">
                             <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" placeholder="John Doe" />
+                            <Input id="name" placeholder="John Doe" value={newAddress.name} onChange={handleInputChange} />
                         </div>
                         <div className="sm:col-span-2">
-                            <Label htmlFor="address">Address Line</Label>
-                            <Input id="address" placeholder="123 Market St" />
+                            <Label htmlFor="addressLine1">Address Line 1</Label>
+                            <Input id="addressLine1" placeholder="123 Market St" value={newAddress.addressLine1} onChange={handleInputChange} />
+                        </div>
+                         <div className="sm:col-span-2">
+                            <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
+                            <Input id="addressLine2" placeholder="Apt 4B" value={newAddress.addressLine2} onChange={handleInputChange} />
                         </div>
                         <div>
                             <Label htmlFor="city">City</Label>
-                            <Input id="city" placeholder="Metropolis" />
+                            <Input id="city" placeholder="Metropolis" value={newAddress.city} onChange={handleInputChange} />
                         </div>
                          <div>
                             <Label htmlFor="state">State</Label>
-                            <Input id="state" placeholder="NY" />
+                            <Input id="state" placeholder="NY" value={newAddress.state} onChange={handleInputChange} />
                         </div>
                         <div>
                             <Label htmlFor="zip">ZIP Code</Label>
-                            <Input id="zip" placeholder="10001" />
+                            <Input id="zip" placeholder="10001" value={newAddress.zip} onChange={handleInputChange} />
                         </div>
                          <div>
                             <Label htmlFor="country">Country</Label>
-                            <Input id="country" placeholder="USA" />
+                            <Input id="country" placeholder="USA" value={newAddress.country} onChange={handleInputChange} />
                         </div>
-                        <div className="sm:col-span-2 flex justify-end">
-                            <Button variant="outline" onClick={() => setShowNewAddressForm(false)}>Cancel</Button>
-                            <Button className="ml-2">Save Address</Button>
+                        <div className="sm:col-span-2 flex justify-end gap-2">
+                           {addresses.length > 0 && <Button variant="outline" onClick={() => setShowNewAddressForm(false)}>Cancel</Button> }
+                            <Button onClick={handleSaveAddress}>Save Address</Button>
                         </div>
                      </div>
                   )}
@@ -113,29 +195,36 @@ export default function CheckoutPage() {
                   <CardDescription>All transactions are secure and encrypted.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                   <RadioGroup defaultValue="card">
-                      <Label htmlFor="card" className="flex items-start space-x-4 p-4 border rounded-md has-[:checked]:bg-accent has-[:checked]:border-primary">
-                        <RadioGroupItem value="card" id="card" />
-                        <div className="w-full">
-                          <p className="font-semibold">Credit/Debit Card</p>
-                          <div className="mt-4 grid gap-4">
+                   <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                        <Label htmlFor="card" className="flex items-start space-x-4 p-4 border rounded-md has-[:checked]:bg-accent has-[:checked]:border-primary cursor-pointer">
+                            <RadioGroupItem value="card" id="card" />
+                            <div className="w-full">
+                            <p className="font-semibold">Card / Razorpay</p>
+                            <div className="mt-4 grid gap-4">
+                                <div>
+                                    <Label htmlFor="card-number">Card Number</Label>
+                                    <Input id="card-number" placeholder="**** **** **** 1234" disabled={paymentMethod !== 'card'}/>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <Label htmlFor="expiry">Expiry</Label>
+                                        <Input id="expiry" placeholder="MM/YY" disabled={paymentMethod !== 'card'} />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="cvc">CVC</Label>
+                                        <Input id="cvc" placeholder="123" disabled={paymentMethod !== 'card'} />
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </Label>
+                         <Label htmlFor="cod" className="flex items-start space-x-4 p-4 border rounded-md has-[:checked]:bg-accent has-[:checked]:border-primary cursor-pointer">
+                            <RadioGroupItem value="cod" id="cod" />
                             <div>
-                                <Label htmlFor="card-number">Card Number</Label>
-                                <Input id="card-number" placeholder="**** **** **** 1234" />
+                                <p className="font-semibold">Cash on Delivery (COD)</p>
+                                <p className="text-sm text-muted-foreground mt-2">Pay with cash upon delivery of your order.</p>
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <Label htmlFor="expiry">Expiry</Label>
-                                    <Input id="expiry" placeholder="MM/YY" />
-                                </div>
-                                <div>
-                                    <Label htmlFor="cvc">CVC</Label>
-                                    <Input id="cvc" placeholder="123" />
-                                </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Label>
+                         </Label>
                    </RadioGroup>
                 </CardContent>
               </Card>
@@ -147,8 +236,8 @@ export default function CheckoutPage() {
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2 text-sm">
+              <CardContent>
+                 <div className="space-y-2 text-sm">
                   {cartItems.map(item => (
                     <div key={item.cartItemId} className="flex justify-between">
                       <span className="text-muted-foreground">{item.name} (x{item.quantity}, {item.selectedSize})</span>
@@ -156,7 +245,7 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
-                <Separator />
+                <Separator className="my-4"/>
                 <div className="space-y-2">
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">Subtotal</span>
@@ -171,14 +260,14 @@ export default function CheckoutPage() {
                         <span>${taxes.toFixed(2)}</span>
                     </div>
                 </div>
-                <Separator />
+                <Separator className="my-4"/>
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
               </CardContent>
               <CardFooter>
-                 <Button size="lg" className="w-full" variant="destructive" onClick={handlePlaceOrder} disabled={cartItems.length === 0}>
+                 <Button size="lg" className="w-full" variant="destructive" onClick={handlePlaceOrder} disabled={cartItems.length === 0 || loading}>
                     Place Order
                   </Button>
               </CardFooter>

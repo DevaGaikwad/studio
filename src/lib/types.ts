@@ -1,3 +1,5 @@
+import { CartItem } from "@/context/CartContext";
+
 export type Product = {
   id: string;
   name: string;
@@ -11,4 +13,25 @@ export type Product = {
   reviews: number;
   description: string;
   aiHint: string;
+};
+
+export type Address = {
+    id: string;
+    name: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+};
+
+export type Order = {
+    id: string;
+    date: string;
+    status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+    total: number;
+    items: CartItem[];
+    shippingAddress: Address;
+    paymentMethod: string;
 };

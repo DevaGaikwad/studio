@@ -1,3 +1,5 @@
+import type { Product, Order } from './types';
+
 export const categories = [
   { id: 1, name: 'Men' },
   { id: 2, name: 'Women' },
@@ -6,7 +8,7 @@ export const categories = [
   { id: 5, name: 'New Arrivals' },
 ];
 
-export const products = [
+export const products: Product[] = [
   {
     id: 'prod_001',
     name: 'Classic Cotton T-Shirt',
@@ -217,67 +219,6 @@ export const products = [
     description: 'Luxuriously soft 100% cashmere sweater for ultimate warmth and sophistication.',
     aiHint: "cashmere sweater",
   },
-];
-
-export const userAddresses = [
-  {
-    id: 'addr_1',
-    name: 'John Doe',
-    addressLine1: '123 Market St',
-    addressLine2: 'Apt 4B',
-    city: 'Metropolis',
-    state: 'NY',
-    zip: '10001',
-    country: 'USA',
-    isDefault: true,
-  },
-  {
-    id: 'addr_2',
-    name: 'John Doe',
-    addressLine1: '456 Innovation Dr',
-    addressLine2: '',
-    city: 'Techville',
-    state: 'CA',
-    zip: '94043',
-    country: 'USA',
-    isDefault: false,
-  },
-];
-
-export const pastOrders = [
-  {
-    id: 'ORD-2023-001',
-    date: '2023-10-15',
-    status: 'Delivered',
-    total: 105.00,
-    items: [
-      { ...products[1], quantity: 1 },
-      { ...products[0], quantity: 1 },
-    ],
-    shippingAddress: userAddresses[0]
-  },
-  {
-    id: 'ORD-2023-002',
-    date: '2023-11-01',
-    status: 'Delivered',
-    total: 290.00,
-    items: [
-      { ...products[3], quantity: 1 },
-      { ...products[4], quantity: 1 },
-    ],
-    shippingAddress: userAddresses[0]
-  },
-    {
-    id: 'ORD-2024-003',
-    date: '2024-01-20',
-    status: 'Processing',
-    total: 415.00,
-    items: [
-      { ...products[6], quantity: 1 },
-      { ...products[8], quantity: 1 },
-    ],
-    shippingAddress: userAddresses[1]
-  }
 ];
 
 export const productFilters = {
