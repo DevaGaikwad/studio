@@ -18,7 +18,7 @@ const adminNavItems = [
 
 // For now, we'll use a simple array of admin UIDs. 
 // In a real-world scenario, this should be a role-based system in your database.
-const ADMIN_UIDS = ['2Q3Z4xY6a7b8c9d0E1F2G3H4I5J6k7l8m9n0o1p', 'F2G3H4I5J6k7l8m9n0o1p2Q3Z4xY6a7b8c9d0E1'];
+const ADMIN_UIDS = ['Dm57qveYZhTC6BrRB6V0XlnfVwG3', 'F2G3H4I5J6k7l8m9n0o1p2Q3Z4xY6a7b8c9d0E1'];
 
 export default function AdminLayout({
   children,
