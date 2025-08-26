@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -16,7 +17,6 @@ import { useToast } from '@/hooks/use-toast';
 const formSchema = z.object({
   name: z.string().min(1, { message: 'Name is required.' }),
   email: z.string().email({ message: 'Please enter a valid email.' }),
-  mobile: z.string().min(10, { message: 'Please enter a valid mobile number.' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
@@ -30,7 +30,6 @@ export default function RegisterPage() {
     defaultValues: {
       name: '',
       email: '',
-      mobile: '',
       password: '',
     },
   });
@@ -54,7 +53,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
           <Link href="/">
-             <h1 className="text-3xl font-bold font-headline text-primary-foreground mb-2">Bombay Cloths</h1>
+             <h1 className="text-3xl font-bold font-headline mb-2">Bombay Cloths</h1>
           </Link>
           <CardTitle className="text-2xl">Create an Account</CardTitle>
           <CardDescription>Join us and start shopping for the latest trends.</CardDescription>
@@ -83,19 +82,6 @@ export default function RegisterPage() {
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input placeholder="m@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="mobile"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mobile Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+1 (555) 555-5555" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

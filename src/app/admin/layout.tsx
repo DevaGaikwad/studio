@@ -18,7 +18,7 @@ const adminNavItems = [
 
 // For now, we'll use a simple array of admin UIDs. 
 // In a real-world scenario, this should be a role-based system in your database.
-const ADMIN_UIDS = ['2Q3Z4xY6a7b8c9d0E1F2G3H4I5J6k7l8m9n0o1p'];
+const ADMIN_UIDS = ['2Q3Z4xY6a7b8c9d0E1F2G3H4I5J6k7l8m9n0o1p', 'F2G3H4I5J6k7l8m9n0o1p2Q3Z4xY6a7b8c9d0E1'];
 
 export default function AdminLayout({
   children,
@@ -30,14 +30,27 @@ export default function AdminLayout({
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!loading && (!user || !ADMIN_UIDS.includes(user.uid))) {
-      router.push('/login'); // Or a dedicated "unauthorized" page
+    if (!loading && !user) {
+      router.push('/login?redirect=/admin');
     }
   }, [user, loading, router]);
 
 
-  if (loading || !user || !ADMIN_UIDS.includes(user.uid)) {
+  if (loading || !user) {
     return <div className="flex items-center justify-center min-h-screen">Loading admin dashboard...</div>;
+  }
+  
+  if (!ADMIN_UIDS.includes(user.uid)) {
+     return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <h1 className="text-3xl font-bold">Unauthorized</h1>
+        <p className="mt-2 text-muted-foreground">You do not have permission to view this page.</p>
+        <p className="text-sm text-muted-foreground mt-4">Your UID: {user.uid}</p>
+         <Link href="/" className="mt-4 text-sm text-primary hover:underline">
+            Go back to the homepage
+          </Link>
+      </div>
+    );
   }
 
   return (
