@@ -107,7 +107,7 @@ export default function AdminProductsPage() {
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                    <TableCell>
-                    <Link href={`/products/${product.id}`} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                    <Link href={`/admin/products/${product.id}`} className="text-primary hover:underline">
                       {product.id.slice(0, 8)}...
                     </Link>
                   </TableCell>
