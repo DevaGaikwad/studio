@@ -12,15 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 function ServiceAccountNotice({ userCount }: { userCount: number }) {
     if (process.env.NODE_ENV === 'production' || userCount > 0) return null;
 
-    let keyMissing = false;
-    try {
-        require.resolve('../../../serviceAccountKey.json');
-    } catch(e) {
-        keyMissing = true;
-    }
-
-    if (!keyMissing) return null;
-
     return (
         <Alert className="mb-6">
             <Terminal className="h-4 w-4" />

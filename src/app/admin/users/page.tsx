@@ -24,18 +24,8 @@ async function getUsers(): Promise<UserInfo[]> {
     }
 }
 
-function ServiceAccountNotice() {
-    if (process.env.NODE_ENV === 'production') return null;
-
-     // This is a simplified check. A more robust check might involve an API route.
-    let keyMissing = false;
-    try {
-        require.resolve('../../../serviceAccountKey.json');
-    } catch(e) {
-        keyMissing = true;
-    }
-
-    if (!keyMissing) return null;
+function ServiceAccountNotice({ userCount }: { userCount: number }) {
+    if (process.env.NODE_ENV === 'production' || userCount > 0) return null;
 
     return (
         <Alert className="mb-6">
@@ -54,7 +44,7 @@ export default async function AdminUsersPage() {
   return (
     <>
       <h1 className="text-3xl font-bold mb-6">Users</h1>
-      <ServiceAccountNotice />
+      <ServiceAccountNotice userCount={users.length} />
       <Card>
         <CardContent className="p-0">
           <Table>
