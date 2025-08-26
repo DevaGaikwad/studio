@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -58,7 +59,9 @@ export default function Home() {
                   <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center text-white p-4">
                     <h1 className="text-4xl md:text-6xl font-headline font-bold drop-shadow-lg">New Winter Collection</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-2xl drop-shadow-md">Stay warm and stylish with our latest arrivals. Unmatched quality and comfort.</p>
-                    <Button variant="destructive" size="lg" className="mt-8">Shop Now</Button>
+                    <Link href="/products">
+                      <Button variant="destructive" size="lg" className="mt-8">Shop Now</Button>
+                    </Link>
                   </div>
                 </div>
               </CarouselItem>
@@ -74,7 +77,9 @@ export default function Home() {
                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-center text-white p-4">
                     <h1 className="text-4xl md:text-6xl font-headline font-bold drop-shadow-lg">Up to 40% Off</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-2xl drop-shadow-md">On selected styles. Don't miss out on the biggest sale of the season!</p>
-                    <Button variant="destructive" size="lg" className="mt-8">Explore Deals</Button>
+                     <Link href="/products">
+                        <Button variant="destructive" size="lg" className="mt-8">Explore Deals</Button>
+                     </Link>
                   </div>
                 </div>
               </CarouselItem>
