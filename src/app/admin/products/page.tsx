@@ -85,9 +85,9 @@ export default function AdminProductsPage() {
                   <span className="sr-only">Image</span>
                 </TableHead>
                 <TableHead>Name</TableHead>
+                 <TableHead>Product ID</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead className="hidden md:table-cell">Price</TableHead>
-                <TableHead className="hidden md:table-cell">Sizes</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -106,14 +106,16 @@ export default function AdminProductsPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
+                   <TableCell>
+                    <Link href={`/products/${product.id}`} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                      {product.id.slice(0, 8)}...
+                    </Link>
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">{product.category}</Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     ₹{product.price.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {product.sizes.join(', ')}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
