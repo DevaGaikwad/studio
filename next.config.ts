@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -17,6 +18,13 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+  },
+  // This is required for the Firebase Admin SDK to work.
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+        config.externals.push('firebase-admin');
+    }
+    return config;
   },
 };
 
