@@ -38,49 +38,63 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               <Card>
-                <CardContent className="p-6 space-y-6">
-                  {cartItems.map((item) => (
+                <CardContent className="p-4 md:p-6 space-y-6">
+                  {cartItems.map((item, index) => (
                     <div key={item.cartItemId}>
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                         <Image
                           src={item.imageUrl}
                           alt={item.name}
-                          width={100}
-                          height={100}
-                          className="rounded-md object-cover"
+                          width={120}
+                          height={120}
+                          className="rounded-md object-cover self-center md:self-start"
                           data-ai-hint={item.aiHint}
                         />
-                        <div className="flex-grow">
-                          <h3 className="font-semibold">{item.name}</h3>
-                          <p className="text-sm text-muted-foreground">₹{item.price.toFixed(2)}</p>
-                           <Select value={item.selectedSize} onValueChange={(newSize) => updateSize(item.cartItemId, newSize)}>
-                                <SelectTrigger className="w-[120px] mt-2 h-8 text-xs">
-                                <SelectValue placeholder="Select a size" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                {item.sizes.map(size => (
-                                    <SelectItem key={size} value={size}>{size}</SelectItem>
-                                ))}
-                                </SelectContent>
-                            </Select>
+                        <div className="flex-grow w-full">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-lg">{item.name}</h3>
+                              <p className="text-sm text-muted-foreground">₹{item.price.toFixed(2)}</p>
+                            </div>
+                            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive md:hidden" onClick={() => removeItem(item.cartItemId)}>
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
+                          </div>
+
+                           <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4">
+                              <Select value={item.selectedSize} onValueChange={(newSize) => updateSize(item.cartItemId, newSize)}>
+                                  <SelectTrigger className="w-full sm:w-[120px] h-10 text-sm">
+                                  <SelectValue placeholder="Select a size" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                  {item.sizes.map(size => (
+                                      <SelectItem key={size} value={size}>{size}</SelectItem>
+                                  ))}
+                                  </SelectContent>
+                              </Select>
+
+                              <div className="flex items-center gap-2 self-start">
+                                <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}>
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <Input readOnly value={item.quantity} className="h-10 w-14 text-center" />
+                                <Button variant="outline" size="icon" className="h-10 w-10" onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}>
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                               <p className="font-semibold text-lg sm:ml-auto">
+                                ₹{(item.price * item.quantity).toFixed(2)}
+                              </p>
+                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}>
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <Input readOnly value={item.quantity} className="h-8 w-12 text-center" />
-                          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}>
-                            <Plus className="h-4 w-4" />
+
+                        <div className="hidden md:flex items-center">
+                          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.cartItemId)}>
+                            <Trash2 className="h-5 w-5" />
                           </Button>
                         </div>
-                        <p className="font-semibold w-20 text-right">
-                          ₹{(item.price * item.quantity).toFixed(2)}
-                        </p>
-                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.cartItemId)}>
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
                       </div>
-                      <Separator className="mt-6"/>
+                      {index < cartItems.length - 1 && <Separator className="mt-6"/>}
                     </div>
                   ))}
                 </CardContent>
