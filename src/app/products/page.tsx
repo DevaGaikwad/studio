@@ -16,10 +16,14 @@ import { productFilters } from '@/lib/placeholder-data';
 import type { Product } from '@/lib/types';
 import { getProducts } from '@/services/productService';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronsUpDown } from 'lucide-react';
+
 
 function ProductsPageContent() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
+  const categoryQuery = searchParams.get('category') || 'All';
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -27,6 +31,8 @@ function ProductsPageContent() {
   const [priceRange, setPriceRange] = useState<[number]>([productFilters.priceRange.max]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('newest');
+  const [isFiltersOpen, setIsFiltersOpen] = useState(true);
+
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -45,6 +51,11 @@ function ProductsPageContent() {
 
   useEffect(() => {
     let filtered = [...allProducts];
+
+    // Filter by category
+    if (categoryQuery && categoryQuery !== 'All') {
+        filtered = filtered.filter(p => p.category.toLowerCase() === categoryQuery.toLowerCase());
+    }
 
     // Filter by search query
     if (searchQuery) {
@@ -65,13 +76,12 @@ function ProductsPageContent() {
     } else if (sortBy === 'price-desc') {
       filtered.sort((a, b) => b.price - a.price);
     } else {
-       // Default to newest - assuming IDs are chronological for now
-       // A proper implementation would use a timestamp
+       // Default to newest
        filtered.sort((a, b) => a.id.localeCompare(b.id));
     }
 
     setProducts(filtered);
-  }, [priceRange, selectedColors, sortBy, allProducts, searchQuery]);
+  }, [priceRange, selectedColors, sortBy, allProducts, searchQuery, categoryQuery]);
   
   const handleColorChange = (color: string) => {
     setSelectedColors(prev => 
@@ -85,60 +95,77 @@ function ProductsPageContent() {
     setSortBy('newest');
   };
 
+  const FilterSidebar = () => (
+     <Card>
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <Label htmlFor="price-range" className="font-semibold">Price Range</Label>
+            <div className="flex justify-between items-center mt-2 text-sm">
+              <span>${productFilters.priceRange.min}</span>
+              <span>${priceRange[0]}</span>
+            </div>
+            <Slider
+              id="price-range"
+              min={productFilters.priceRange.min}
+              max={productFilters.priceRange.max}
+              step={10}
+              value={priceRange}
+              onValueChange={(value) => setPriceRange(value as [number])}
+              className="mt-2"
+            />
+          </div>
+          <div>
+            <h4 className="font-semibold">Color</h4>
+            <div className="mt-2 space-y-2">
+              {productFilters.colors.slice(0, 6).map((color) => (
+                <div key={color} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`color-${color}`}
+                    checked={selectedColors.includes(color)}
+                    onCheckedChange={() => handleColorChange(color)}
+                  />
+                  <Label htmlFor={`color-${color}`} className="font-normal">{color}</Label>
+                </div>
+              ))}
+            </div>
+          </div>
+          <Button onClick={resetFilters} variant="outline" className="w-full">Reset Filters</Button>
+        </CardContent>
+      </Card>
+  );
+
   return (
     <div className="bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold font-headline">All Products</h1>
+            <h1 className="text-4xl font-bold font-headline">{categoryQuery}</h1>
             <p className="text-muted-foreground mt-2">Find your next favorite piece from our curated collection.</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <aside className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Filters</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Price Filter */}
-                <div>
-                  <Label htmlFor="price-range" className="font-semibold">Price Range</Label>
-                  <div className="flex justify-between items-center mt-2 text-sm">
-                    <span>${productFilters.priceRange.min}</span>
-                    <span>${priceRange[0]}</span>
-                  </div>
-                  <Slider
-                    id="price-range"
-                    min={productFilters.priceRange.min}
-                    max={productFilters.priceRange.max}
-                    step={10}
-                    value={priceRange}
-                    onValueChange={(value) => setPriceRange(value as [number])}
-                    className="mt-2"
-                  />
-                </div>
-                
-                {/* Color Filter */}
-                <div>
-                  <h4 className="font-semibold">Color</h4>
-                  <div className="mt-2 space-y-2">
-                    {productFilters.colors.slice(0, 6).map((color) => (
-                      <div key={color} className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`color-${color}`}
-                          checked={selectedColors.includes(color)}
-                          onCheckedChange={() => handleColorChange(color)}
-                        />
-                        <Label htmlFor={`color-${color}`} className="font-normal">{color}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Button onClick={resetFilters} variant="outline" className="w-full">Reset Filters</Button>
-              </CardContent>
-            </Card>
+             {/* Desktop Filters */}
+             <div className="hidden lg:block">
+              <FilterSidebar />
+             </div>
+             {/* Mobile/Tablet Collapsible Filters */}
+             <div className="lg:hidden">
+              <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    <span>Filters</span>
+                    <ChevronsUpDown className="h-4 w-4" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-4">
+                  <FilterSidebar />
+                </CollapsibleContent>
+              </Collapsible>
+             </div>
           </aside>
           
           {/* Product Grid */}

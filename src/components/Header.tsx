@@ -32,6 +32,7 @@ export function Header() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,16 +41,26 @@ export function Header() {
     } else {
       router.push(`/products?q=${encodeURIComponent(searchQuery)}`);
     }
+     if (isSheetOpen) setIsSheetOpen(false);
   };
   
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setSearchQuery(value);
-       if (value.trim() === '') {
-          router.push('/products');
-       } else {
-         router.push(`/products?q=${encodeURIComponent(value)}`, { scroll: false });
-       }
+      const params = new URLSearchParams(window.location.search);
+      if (value.trim() === '') {
+         params.delete('q');
+      } else {
+         params.set('q', value);
+      }
+      router.push(`/products?${params.toString()}`, { scroll: false });
+  }
+
+  const handleCategoryClick = (categoryName: string) => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('category', categoryName);
+    router.push(`/products?${params.toString()}`);
+    if (isSheetOpen) setIsSheetOpen(false);
   }
 
   const getInitials = (name: string | null | undefined) => {
@@ -59,15 +70,6 @@ export function Header() {
   
   const userActions = (
     <>
-      <Link href="/cart" passHref>
-        <Button variant="ghost" size="icon" aria-label="Open cart" className="relative">
-          <ShoppingCart className="h-6 w-6" />
-          {cartCount > 0 && (
-            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0">{cartCount}</Badge>
-          )}
-        </Button>
-      </Link>
-      
       {user ? (
          <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -120,40 +122,49 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             {categories.map((category) => (
-              <Link key={category.id} href="/products" className="text-foreground/80 hover:text-foreground transition-colors">
+              <button key={category.id} onClick={() => handleCategoryClick(category.name)} className="text-foreground/80 hover:text-foreground transition-colors">
                 {category.name}
-              </Link>
+              </button>
             ))}
           </nav>
           
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
-             <form onSubmit={handleSearch} className="relative">
-              <Input
-                type="search"
-                placeholder="Search products..."
-                className="w-48 pr-10"
-                value={searchQuery}
-                onChange={handleSearchInputChange}
-              />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            </form>
-            {userActions}
-          </div>
-          
-          {/* Mobile Actions & Navigation Trigger */}
-          <div className="md:hidden flex items-center gap-2">
-            {userActions}
-            <Sheet>
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <div className="hidden md:block">
+              <form onSubmit={handleSearch} className="relative">
+                <Input
+                  type="search"
+                  placeholder="Search products..."
+                  className="w-48 pr-10"
+                  value={searchQuery}
+                  onChange={handleSearchInputChange}
+                />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              </form>
+            </div>
+             <Link href="/cart" passHref>
+              <Button variant="ghost" size="icon" aria-label="Open cart" className="relative">
+                <ShoppingCart className="h-6 w-6" />
+                {cartCount > 0 && (
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">{cartCount}</Badge>
+                )}
+              </Button>
+            </Link>
+            <div className="hidden md:flex">
+              {userActions}
+            </div>
+            
+            {/* Mobile Navigation Trigger */}
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
+                 <Button variant="ghost" size="icon" className="md:hidden">
                   <Menu className="h-6 w-6" />
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[300px] sm:w-[400px]">
                 <nav className="flex flex-col p-6 gap-6">
-                  <Link href="/" className="text-2xl font-bold font-headline text-primary-foreground mb-4">
+                  <Link href="/" onClick={() => setIsSheetOpen(false)} className="text-2xl font-bold font-headline text-primary-foreground mb-4">
                     Bombay Cloths
                   </Link>
                   <form onSubmit={handleSearch} className="relative mb-4">
@@ -167,17 +178,27 @@ export function Header() {
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   </form>
                   {categories.map((category) => (
-                    <Link key={category.id} href="/products" className="text-lg text-foreground/80 hover:text-foreground transition-colors">
+                    <button key={category.id} onClick={() => handleCategoryClick(category.name)} className="text-lg text-left text-foreground/80 hover:text-foreground transition-colors">
                       {category.name}
-                    </Link>
+                    </button>
                   ))}
                   <div className="border-t pt-6 mt-auto flex flex-col gap-4">
-                     {user && (
-                       <Link href="/orders">
+                     {user ? (
+                      <>
+                        <Link href="/orders" onClick={() => setIsSheetOpen(false)}>
                            <Button variant="outline" className="w-full justify-start gap-2">
                               <ShoppingCart className="h-5 w-5" />
                               My Orders
                            </Button>
+                       </Link>
+                       <Button variant="outline" className="w-full justify-start gap-2" onClick={() => { logout(); setIsSheetOpen(false); }}>
+                          <LogOut className="h-5 w-5" />
+                          Logout
+                       </Button>
+                      </>
+                     ) : (
+                       <Link href="/login" onClick={() => setIsSheetOpen(false)}>
+                         <Button className="w-full">Login</Button>
                        </Link>
                      )}
                   </div>
