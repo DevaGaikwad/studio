@@ -7,8 +7,8 @@ import { getProductById } from '@/services/productService';
 import type { Product } from '@/lib/types';
 import { notFound } from 'next/navigation';
 
-export default function EditProductPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 

@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/Header';
@@ -26,7 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { addToCart } = useCart();
-  const { id } = use(params);
+  const { id } = React.use(params);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   

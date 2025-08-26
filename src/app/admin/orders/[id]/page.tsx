@@ -16,8 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
   const router = useRouter();
   const { toast } = useToast();
   const [order, setOrder] = useState<Order | null>(null);
