@@ -6,6 +6,18 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 // This is a server-side only file.
 
 const initializeAdminApp = () => {
+    // If running in a local development environment, don't initialize admin app
+    // if service account key is not present.
+    if (process.env.NODE_ENV !== 'production' && !process.env.FIREBASE_SERVICE_ACCOUNT) {
+        try {
+            // Check if the file exists without crashing if it doesn't
+            require.resolve('../../../serviceAccountKey.json');
+        } catch (e) {
+            console.warn("Could not find serviceAccountKey.json. Admin features like user listing will be disabled in local development. This is not an error.");
+            return null;
+        }
+    }
+
     if (getApps().length > 0 && getApps().find(app => app.name === 'admin')) {
         return getApps().find(app => app.name === 'admin');
     }
@@ -34,7 +46,7 @@ const initializeAdminApp = () => {
 export async function getAllUsers() {
     const adminApp = initializeAdminApp();
     if (!adminApp) {
-      console.log('Admin app not initialized');
+      console.log('Admin app not initialized, returning empty user list.');
       return [];
     }
     const auth = getAuth(adminApp);

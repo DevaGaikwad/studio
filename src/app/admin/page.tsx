@@ -1,4 +1,5 @@
 
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAllOrders } from "@/services/orderService";
 import { getAllUsers } from "@/services/userService";
@@ -9,9 +10,15 @@ import { unstable_noStore as noStore } from "next/cache";
 async function getStats() {
     noStore();
     try {
+        // In development, user fetching might fail if service key is not present.
+        // We'll fetch users conditionally.
+        const usersPromise = process.env.NODE_ENV === 'production' 
+            ? getAllUsers() 
+            : Promise.resolve([]);
+
         const [orders, users, products] = await Promise.all([
             getAllOrders(),
-            getAllUsers(),
+            usersPromise,
             getProducts()
         ]);
 
@@ -25,11 +32,17 @@ async function getStats() {
         }
     } catch (error) {
         console.error("Failed to fetch admin stats:", error);
+        // Attempt to fetch other stats even if one fails
+         const [orders, products] = await Promise.all([
+            getAllOrders().catch(() => []),
+            getProducts().catch(() => [])
+        ]);
+         const totalRevenue = orders.reduce((acc, order) => acc + order.total, 0);
         return {
-            totalRevenue: 0,
-            totalOrders: 0,
+            totalRevenue,
+            totalOrders: orders.length,
             totalUsers: 0,
-            totalProducts: 0,
+            totalProducts: products.length,
         }
     }
 }
