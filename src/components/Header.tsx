@@ -12,6 +12,7 @@ import { categories } from '@/lib/placeholder-data';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +36,7 @@ export function Header() {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const currentCategory = searchParams.get('category') || 'All';
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -119,72 +121,88 @@ export function Header() {
     <header className="bg-card shadow-sm sticky top-0 z-40">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          {/* Mobile Menu Trigger (moved for layout flow) */}
-          <div className="md:hidden">
-            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                    <Menu className="h-6 w-6" />
-                    <span className="sr-only">Open menu</span>
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0">
-                  <SheetHeader className="p-6">
-                    <SheetTitle className="sr-only">Menu</SheetTitle>
-                  </SheetHeader>
-                  <nav className="flex flex-col px-6 pb-6 gap-6">
-                      <Link href="/" onClick={() => setIsSheetOpen(false)} className="text-2xl font-bold font-headline text-primary-foreground -mt-6 mb-4">
-                        Bombay Cloths
-                      </Link>
-                      <form onSubmit={handleSearch} className="relative mb-4">
-                        <Input
-                          type="search"
-                          placeholder="Search products..."
-                          className="pr-10"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      </form>
-                      {categories.map((category) => (
-                        <button key={category.id} onClick={() => handleCategoryClick(category.name)} className="text-lg text-left text-foreground/80 hover:text-foreground transition-colors">
-                          {category.name}
-                        </button>
-                      ))}
-                      <div className="border-t pt-6 mt-auto flex flex-col gap-4">
-                        {user ? (
-                          <>
-                            <Link href="/orders" onClick={() => setIsSheetOpen(false)}>
-                              <Button variant="outline" className="w-full justify-start gap-2">
-                                  <ShoppingCart className="h-5 w-5" />
-                                  My Orders
-                              </Button>
-                          </Link>
-                          <Button variant="outline" className="w-full justify-start gap-2" onClick={() => { logout(); setIsSheetOpen(false); }}>
-                              <LogOut className="h-5 w-5" />
-                              Logout
-                          </Button>
-                          </>
-                        ) : (
-                          <Link href="/login" onClick={() => setIsSheetOpen(false)}>
-                            <Button className="w-full">Login</Button>
-                          </Link>
-                        )}
-                      </div>
-                  </nav>
-                </SheetContent>
-            </Sheet>
+          <div className="flex items-center gap-2">
+            {/* Mobile Menu Trigger */}
+            <div className="md:hidden">
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                  <SheetTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                      <Menu className="h-6 w-6" />
+                      <span className="sr-only">Open menu</span>
+                      </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0">
+                    <SheetHeader className="p-6 pb-0">
+                       <SheetTitle className="sr-only">Menu</SheetTitle>
+                    </SheetHeader>
+                    <nav className="flex flex-col px-6 pb-6 gap-6 h-full">
+                        <Link href="/" onClick={() => setIsSheetOpen(false)} className="text-2xl font-bold font-headline text-primary-foreground mb-4">
+                          Bombay Cloths
+                        </Link>
+                        <form onSubmit={handleSearch} className="relative mb-4">
+                          <Input
+                            type="search"
+                            placeholder="Search products..."
+                            className="pr-10"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        </form>
+                        {categories.map((category) => (
+                           <button
+                            key={category.id}
+                            onClick={() => handleCategoryClick(category.name)}
+                            className={cn(
+                                "text-lg text-left transition-colors",
+                                currentCategory === category.name ? "text-primary font-semibold" : "text-foreground/80 hover:text-foreground"
+                            )}
+                            >
+                            {category.name}
+                          </button>
+                        ))}
+                        <div className="border-t pt-6 mt-auto flex flex-col gap-4">
+                          {user ? (
+                            <>
+                              <Link href="/orders" onClick={() => setIsSheetOpen(false)}>
+                                <Button variant="outline" className="w-full justify-start gap-2">
+                                    <ShoppingCart className="h-5 w-5" />
+                                    My Orders
+                                </Button>
+                            </Link>
+                            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => { logout(); setIsSheetOpen(false); }}>
+                                <LogOut className="h-5 w-5" />
+                                Logout
+                            </Button>
+                            </>
+                          ) : (
+                            <Link href="/login" onClick={() => setIsSheetOpen(false)}>
+                              <Button className="w-full">Login</Button>
+                            </Link>
+                          )}
+                        </div>
+                    </nav>
+                  </SheetContent>
+              </Sheet>
+            </div>
+             {/* Logo */}
+            <Link href="/" className="text-2xl font-bold font-headline text-primary-foreground">
+              Bombay Cloths
+            </Link>
           </div>
-
-          {/* Logo */}
-          <Link href="/" className="text-2xl font-bold font-headline text-primary-foreground">
-            Bombay Cloths
-          </Link>
+         
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             {categories.map((category) => (
-              <button key={category.id} onClick={() => handleCategoryClick(category.name)} className="text-foreground/80 hover:text-foreground transition-colors">
+              <button
+                key={category.id}
+                onClick={() => handleCategoryClick(category.name)}
+                className={cn(
+                    "transition-colors",
+                    currentCategory === category.name ? "text-primary font-semibold" : "text-foreground/80 hover:text-foreground"
+                )}
+              >
                 {category.name}
               </button>
             ))}
@@ -208,11 +226,11 @@ export function Header() {
               <Button variant="ghost" size="icon" aria-label="Open cart" className="relative">
                 <ShoppingCart className="h-6 w-6" />
                 {cartCount > 0 && (
-                  <Badge variant="destructive" className="absolute top-0 right-0 h-5 w-5 justify-center rounded-full p-0 text-xs transform translate-x-1/2 -translate-y-1/2">{cartCount}</Badge>
+                   <Badge variant="destructive" className="absolute top-0 right-0 h-5 w-5 justify-center rounded-full p-0 text-xs transform translate-x-1/2 -translate-y-1/2">{cartCount}</Badge>
                 )}
               </Button>
             </Link>
-            <div className="hidden md:flex">
+            <div className="md:flex">
               {userActions}
             </div>
           </div>
