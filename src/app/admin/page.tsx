@@ -4,17 +4,38 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAllOrders } from "@/services/orderService";
 import { getAllUsers } from "@/services/userService";
 import { getProducts } from "@/services/productService";
-import { DollarSign, Package, Users, ShoppingCart } from "lucide-react";
+import { DollarSign, Package, Users, ShoppingCart, Terminal } from "lucide-react";
 import { unstable_noStore as noStore } from "next/cache";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+
+function ServiceAccountNotice({ userCount }: { userCount: number }) {
+    if (process.env.NODE_ENV === 'production' || userCount > 0) return null;
+
+    let keyMissing = false;
+    try {
+        require.resolve('../../../serviceAccountKey.json');
+    } catch(e) {
+        keyMissing = true;
+    }
+
+    if (!keyMissing) return null;
+
+    return (
+        <Alert className="mb-6">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Developer Notice</AlertTitle>
+            <AlertDescription>
+               The "Users" count is zero because a Firebase `serviceAccountKey.json` was not found in the project root. This is required for local development to fetch user data.
+            </AlertDescription>
+        </Alert>
+    )
+}
 
 async function getStats() {
     noStore();
     try {
-        // In development, user fetching might fail if service key is not present.
-        // We'll fetch users conditionally.
-        const usersPromise = process.env.NODE_ENV === 'production' 
-            ? getAllUsers() 
-            : Promise.resolve([]);
+        const usersPromise = getAllUsers();
 
         const [orders, users, products] = await Promise.all([
             getAllOrders(),
@@ -54,6 +75,7 @@ export default async function AdminDashboard() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+       <ServiceAccountNotice userCount={stats.totalUsers} />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

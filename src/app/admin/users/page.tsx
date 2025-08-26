@@ -5,6 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAllUsers } from '@/services/userService';
 import type { UserInfo } from 'firebase/auth';
 import { unstable_noStore as noStore } from 'next/cache';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -22,12 +24,37 @@ async function getUsers(): Promise<UserInfo[]> {
     }
 }
 
+function ServiceAccountNotice() {
+    if (process.env.NODE_ENV === 'production') return null;
+
+     // This is a simplified check. A more robust check might involve an API route.
+    let keyMissing = false;
+    try {
+        require.resolve('../../../serviceAccountKey.json');
+    } catch(e) {
+        keyMissing = true;
+    }
+
+    if (!keyMissing) return null;
+
+    return (
+        <Alert className="mb-6">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Developer Notice</AlertTitle>
+            <AlertDescription>
+                User data is not being fetched. To view users in your local development environment, please add your Firebase `serviceAccountKey.json` to the project root.
+            </AlertDescription>
+        </Alert>
+    )
+}
+
 export default async function AdminUsersPage() {
   const users = await getUsers();
 
   return (
     <>
       <h1 className="text-3xl font-bold mb-6">Users</h1>
+      <ServiceAccountNotice />
       <Card>
         <CardContent className="p-0">
           <Table>
