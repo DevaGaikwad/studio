@@ -1,43 +1,35 @@
 
-"use client";
-
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAllUsers } from '@/services/userService';
 import type { UserInfo } from 'firebase/auth';
+import { unstable_noStore as noStore } from 'next/cache';
 
-export default function AdminUsersPage() {
-  const [users, setUsers] = useState<UserInfo[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const userList = await getAllUsers();
-        setUsers(userList);
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, []);
-
-  if (loading) return <div>Loading users...</div>;
-
-  const getInitials = (name: string | null | undefined) => {
+const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  }
+}
+
+async function getUsers(): Promise<UserInfo[]> {
+    noStore();
+    try {
+        const userList = await getAllUsers();
+        return userList;
+    } catch (error) {
+        console.error("Failed to fetch users:", error);
+        return [];
+    }
+}
+
+export default async function AdminUsersPage() {
+  const users = await getUsers();
 
   return (
     <>
       <h1 className="text-3xl font-bold mb-6">Users</h1>
       <Card>
-        <CardContent>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -47,6 +39,11 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {users.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={3} className="text-center h-24">No users found.</TableCell>
+                </TableRow>
+              )}
               {users.map((user) => (
                 <TableRow key={user.uid}>
                   <TableCell>

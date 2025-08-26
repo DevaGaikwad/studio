@@ -1,40 +1,34 @@
 
-"use client";
 
-import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { getAllOrders } from '@/services/orderService';
 import type { Order } from '@/lib/types';
 import { format } from 'date-fns';
+import { unstable_noStore as noStore } from 'next/cache';
 
-export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
+async function getOrdersData(): Promise<Order[]> {
+    noStore();
+    try {
         const allOrders = await getAllOrders();
-        setOrders(allOrders);
-      } catch (error) {
+        return allOrders;
+    } catch (error) {
         console.error("Failed to fetch orders:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrders();
-  }, []);
+        return [];
+    }
+}
 
-  if (loading) return <div>Loading orders...</div>;
+export default async function AdminOrdersPage() {
+  const orders = await getOrdersData();
 
   return (
     <>
       <h1 className="text-3xl font-bold mb-6">Orders</h1>
       <Card>
-        <CardContent>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -46,6 +40,11 @@ export default function AdminOrdersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
+             {orders.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">No orders found.</TableCell>
+                </TableRow>
+             )}
               {orders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-medium">

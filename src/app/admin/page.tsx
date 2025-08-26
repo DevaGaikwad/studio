@@ -1,8 +1,43 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAllOrders } from "@/services/orderService";
+import { getAllUsers } from "@/services/userService";
+import { getProducts } from "@/services/productService";
 import { DollarSign, Package, Users, ShoppingCart } from "lucide-react";
+import { unstable_noStore as noStore } from "next/cache";
 
-export default function AdminDashboard() {
+async function getStats() {
+    noStore();
+    try {
+        const [orders, users, products] = await Promise.all([
+            getAllOrders(),
+            getAllUsers(),
+            getProducts()
+        ]);
+
+        const totalRevenue = orders.reduce((acc, order) => acc + order.total, 0);
+
+        return {
+            totalRevenue,
+            totalOrders: orders.length,
+            totalUsers: users.length,
+            totalProducts: products.length,
+        }
+    } catch (error) {
+        console.error("Failed to fetch admin stats:", error);
+        return {
+            totalRevenue: 0,
+            totalOrders: 0,
+            totalUsers: 0,
+            totalProducts: 0,
+        }
+    }
+}
+
+
+export default async function AdminDashboard() {
+  const stats = await getStats();
+
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
@@ -15,9 +50,9 @@ export default function AdminDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹45,231.89</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+            <div className="text-2xl font-bold">₹{stats.totalRevenue.toFixed(2)}</div>
+             <p className="text-xs text-muted-foreground">
+              From all orders
             </p>
           </CardContent>
         </Card>
@@ -27,9 +62,9 @@ export default function AdminDashboard() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
-            <p className="text-xs text-muted-foreground">
-              +180.1% from last month
+            <div className="text-2xl font-bold">{stats.totalOrders}</div>
+             <p className="text-xs text-muted-foreground">
+              Total orders placed
             </p>
           </CardContent>
         </Card>
@@ -39,7 +74,7 @@ export default function AdminDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{stats.totalProducts}</div>
             <p className="text-xs text-muted-foreground">
               Total products in store
             </p>
@@ -51,9 +86,9 @@ export default function AdminDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+573</div>
+            <div className="text-2xl font-bold">{stats.totalUsers}</div>
             <p className="text-xs text-muted-foreground">
-              +201 since last hour
+              Total registered users
             </p>
           </CardContent>
         </Card>

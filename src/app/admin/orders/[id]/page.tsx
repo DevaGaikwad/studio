@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -51,7 +52,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           await updateOrderStatus(order.userId, order.id, status);
           setOrder(prev => prev ? {...prev, status: status} : null);
           toast({ title: "Status Updated", description: `Order status changed to ${status}.`});
-          router.refresh();
+          router.refresh(); // Refresh to show changes if any other part of the page depends on server data
       } catch(error) {
           toast({ variant: "destructive", title: "Update Failed", description: "Could not update the order status." });
       } finally {
@@ -59,7 +60,49 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       }
   }
 
-  if (loading) return <div>Loading order details...</div>;
+  if (loading) return (
+       <div className="space-y-6">
+        <Skeleton className="h-8 w-1/4" />
+        <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6">
+                 <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-1/3" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                    </CardContent>
+                 </Card>
+                 <Card>
+                    <CardHeader>
+                         <Skeleton className="h-6 w-1/3" />
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                    </CardContent>
+                 </Card>
+            </div>
+            <div className="lg:col-span-1">
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-6 w-1/2" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                         <Skeleton className="h-4 w-full" />
+                         <Skeleton className="h-4 w-full" />
+                         <Skeleton className="h-4 w-full" />
+                    </CardContent>
+                     <CardFooter className="flex-col items-start gap-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </CardFooter>
+                </Card>
+            </div>
+        </div>
+       </div>
+  );
   if (!order) return notFound();
 
   return (
@@ -71,7 +114,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 <CardHeader>
                     <CardTitle>Order Items</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <div className="space-y-4">
                     {order.items.map(item => (
                         <div key={item.cartItemId} className="flex items-center gap-4">
@@ -97,7 +140,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 <CardHeader>
                     <CardTitle>Customer & Shipping</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm">
+                <CardContent className="text-sm p-6">
                     <p className="font-semibold">{order.shippingAddress.name}</p>
                     <p className="text-muted-foreground">{order.shippingAddress.addressLine1}</p>
                     {order.shippingAddress.addressLine2 && <p className="text-muted-foreground">{order.shippingAddress.addressLine2}</p>}
@@ -110,7 +153,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 <CardHeader>
                     <CardTitle>Order Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="p-6 space-y-4">
                      <div className="flex justify-between">
                         <span>Order ID</span>
                         <span className="font-mono text-sm">{order.id.slice(0, 8)}...</span>
@@ -129,7 +172,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                           <span>₹{order.total.toFixed(2)}</span>
                       </div>
                 </CardContent>
-                <CardFooter className="flex-col items-start gap-4">
+                <CardFooter className="flex-col items-start gap-4 p-6">
                     <Label htmlFor="status" className="font-semibold">Update Status</Label>
                     <Select value={status} onValueChange={(value) => setStatus(value as Order['status'])}>
                         <SelectTrigger id="status">
