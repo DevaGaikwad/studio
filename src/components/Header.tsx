@@ -28,6 +28,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { Separator } from './ui/separator';
 
 export function Header() {
   const { cartCount } = useCart();
@@ -117,6 +118,40 @@ export function Header() {
     </>
   );
 
+  const mobileUserActions = (
+    <div className="mt-auto">
+        <Separator className="my-4" />
+        {user ? (
+            <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+                        <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="font-semibold">{user.displayName}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                    </div>
+                </div>
+                 <Link href="/orders" passHref>
+                   <Button variant="outline" className="w-full justify-start" onClick={() => setIsSheetOpen(false)}>
+                        <ShoppingCart className="mr-2 h-4 w-4" /> My Orders
+                    </Button>
+                </Link>
+                <Button variant="outline" className="w-full justify-start" onClick={() => { logout(); setIsSheetOpen(false); }}>
+                    <LogOut className="mr-2 h-4 w-4" /> Logout
+                </Button>
+            </div>
+        ) : (
+             <Link href="/login" passHref>
+                <Button variant="default" className="w-full" onClick={() => setIsSheetOpen(false)}>
+                    <User className="mr-2 h-4 w-4" /> Login
+                </Button>
+            </Link>
+        )}
+    </div>
+  );
+
   return (
     <header className="bg-card shadow-sm sticky top-0 z-40">
       <div className="container mx-auto px-4">
@@ -131,11 +166,11 @@ export function Header() {
                       <span className="sr-only">Open menu</span>
                       </Button>
                   </SheetTrigger>
-                  <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0">
+                  <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 flex flex-col">
                     <SheetHeader className="p-6 pb-0">
                        <SheetTitle className="sr-only">Menu</SheetTitle>
                     </SheetHeader>
-                    <nav className="flex flex-col px-6 pb-6 gap-6 h-full">
+                    <div className="flex flex-col p-6 h-full">
                         <Link href="/" onClick={() => setIsSheetOpen(false)} className="text-2xl font-bold font-headline text-primary-foreground mb-4">
                           Bombay Cloths
                         </Link>
@@ -149,19 +184,22 @@ export function Header() {
                           />
                           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         </form>
-                        {categories.map((category) => (
-                           <button
-                            key={category.id}
-                            onClick={() => handleCategoryClick(category.name)}
-                            className={cn(
-                                "text-lg text-left transition-colors",
-                                currentCategory === category.name ? "text-blue-600 font-semibold" : "text-foreground/80 hover:text-foreground"
-                            )}
-                            >
-                            {category.name}
-                          </button>
-                        ))}
-                    </nav>
+                        <nav className="flex flex-col gap-4">
+                          {categories.map((category) => (
+                            <button
+                              key={category.id}
+                              onClick={() => handleCategoryClick(category.name)}
+                              className={cn(
+                                  "text-lg text-left transition-colors",
+                                  currentCategory === category.name ? "text-blue-600 font-semibold" : "text-foreground/80 hover:text-foreground"
+                              )}
+                              >
+                              {category.name}
+                            </button>
+                          ))}
+                        </nav>
+                        {mobileUserActions}
+                    </div>
                   </SheetContent>
               </Sheet>
             </div>
@@ -171,7 +209,6 @@ export function Header() {
             </Link>
           </div>
          
-
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             {categories.map((category) => (
@@ -202,6 +239,11 @@ export function Header() {
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 </form>
             </div>
+            
+            <div className="md:hidden">
+              {userActions}
+            </div>
+            
             <Link href="/cart" passHref>
                 <Button variant="ghost" size="icon" aria-label="Open cart" className="relative">
                 <ShoppingCart className="h-6 w-6" />
@@ -210,6 +252,7 @@ export function Header() {
                 )}
                 </Button>
             </Link>
+
             <div className="hidden md:flex">
                 {userActions}
             </div>
