@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { productFilters } from '@/lib/placeholder-data';
-import { Star, Truck } from 'lucide-react';
+import { Truck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import {
   Select,
@@ -136,7 +136,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {/* Product Details */}
           <div>
             <h1 className="text-3xl font-bold font-headline mb-2">{product.name}</h1>
-            <p className="text-3xl font-bold mb-6">${product.price.toFixed(2)}</p>
+            <p className="text-3xl font-bold mb-6">₹{product.price.toFixed(2)}</p>
 
             <div className="space-y-6">
                 {/* Color Selector */}
@@ -177,7 +177,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <CardContent className="p-4 space-y-4 text-sm">
                 <div className="flex items-center gap-3">
                   <Truck className="h-5 w-5 text-muted-foreground" />
-                  <p>Free shipping on orders over $50</p>
+                  <p>Free shipping on orders over ₹500</p>
                 </div>
               </CardContent>
             </Card>

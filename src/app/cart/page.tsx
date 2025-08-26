@@ -23,7 +23,7 @@ export default function CartPage() {
   const { cartItems, updateQuantity, updateSize, removeItem } = useCart();
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = subtotal > 0 ? 5.00 : 0;
+  const shipping = subtotal > 0 ? 50.00 : 0;
   const total = subtotal + shipping;
 
   return (
@@ -52,7 +52,7 @@ export default function CartPage() {
                         />
                         <div className="flex-grow">
                           <h3 className="font-semibold">{item.name}</h3>
-                          <p className="text-sm text-muted-foreground">${item.price.toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">₹{item.price.toFixed(2)}</p>
                            <Select value={item.selectedSize} onValueChange={(newSize) => updateSize(item.cartItemId, newSize)}>
                                 <SelectTrigger className="w-[120px] mt-2 h-8 text-xs">
                                 <SelectValue placeholder="Select a size" />
@@ -74,7 +74,7 @@ export default function CartPage() {
                           </Button>
                         </div>
                         <p className="font-semibold w-20 text-right">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ₹{(item.price * item.quantity).toFixed(2)}
                         </p>
                         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => removeItem(item.cartItemId)}>
                           <Trash2 className="h-5 w-5" />
@@ -95,16 +95,16 @@ export default function CartPage() {
                 <CardContent className="space-y-4">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>₹{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping</span>
-                    <span>${shipping.toFixed(2)}</span>
+                    <span>₹{shipping.toFixed(2)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>₹{total.toFixed(2)}</span>
                   </div>
                 </CardContent>
                 <CardFooter>

@@ -43,7 +43,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <Link href={`/products/${product.id}`}>{product.name}</Link>
         </CardTitle>
         <CardDescription className="mt-2 text-lg font-bold">
-          ${product.price.toFixed(2)}
+          ₹{product.price.toFixed(2)}
         </CardDescription>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex flex-col items-start gap-4">

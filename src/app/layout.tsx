@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Bombay Cloths',
@@ -32,6 +33,7 @@ export default function RootLayout({
             </div>
           </CartProvider>
         </AuthProvider>
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" />
       </body>
     </html>
   );

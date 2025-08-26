@@ -91,7 +91,7 @@ export default function OrdersPage() {
                           <Badge variant={order.status === 'Delivered' ? 'default' : 'secondary'} className={order.status === 'Delivered' ? "bg-green-600 text-white" : ""}>
                             {order.status}
                           </Badge>
-                          <p className="font-semibold mt-1">${order.total.toFixed(2)}</p>
+                          <p className="font-semibold mt-1">₹{order.total.toFixed(2)}</p>
                         </div>
                       </div>
                     </AccordionTrigger>
@@ -115,7 +115,7 @@ export default function OrdersPage() {
                                   <p className="font-medium">{item.name} ({item.selectedSize})</p>
                                   <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                                 </div>
-                                <p className="ml-auto font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                                <p className="ml-auto font-medium">₹{(item.price * item.quantity).toFixed(2)}</p>
                               </div>
                             ))}
                           </div>
@@ -129,7 +129,7 @@ export default function OrdersPage() {
                             <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}</p>
                           </div>
                            <h4 className="font-semibold mb-2 mt-4">Payment</h4>
-                           <p className="text-sm text-muted-foreground">Paid via {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Card/Razorpay'}</p>
+                           <p className="text-sm text-muted-foreground">Paid via {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online'}</p>
                         </div>
                       </div>
                     </AccordionContent>

@@ -17,6 +17,12 @@ import type { Address, Order } from '@/lib/types';
 import { addAddress, getAddresses } from '@/services/addressService';
 import { addOrder } from '@/services/orderService';
 
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
+
 export default function CheckoutPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -27,7 +33,7 @@ export default function CheckoutPage() {
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [selectedAddressId, setSelectedAddressId] = useState<string | undefined>(undefined);
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState('online');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   
   const [newAddress, setNewAddress] = useState({
@@ -37,7 +43,7 @@ export default function CheckoutPage() {
       city: '',
       state: '',
       zip: '',
-      country: 'USA'
+      country: 'India'
   });
 
   useEffect(() => {
@@ -71,8 +77,8 @@ export default function CheckoutPage() {
   }, [user, toast]);
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = 5.00;
-  const taxes = subtotal * 0.08;
+  const shipping = 50.00;
+  const taxes = subtotal * 0.18; // Assuming 18% tax for India
   const total = subtotal + shipping + taxes;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,41 +98,27 @@ export default function CheckoutPage() {
       setAddresses(prev => [...prev, newAddrWithId]);
       setSelectedAddressId(newAddrWithId.id);
       setShowNewAddressForm(false);
-      setNewAddress({ name: '', addressLine1: '', addressLine2: '', city: '', state: '', zip: '', country: 'USA' });
+      setNewAddress({ name: '', addressLine1: '', addressLine2: '', city: '', state: '', zip: '', country: 'India' });
       toast({ title: "Address saved!" });
     } catch(error) {
       toast({ variant: "destructive", title: "Error", description: "Could not save address." });
     }
   };
 
-  const handlePlaceOrder = async () => {
-    if (!user) {
-        toast({ variant: "destructive", title: "Error", description: "You must be logged in to place an order." });
-        return;
-    }
-    if (!selectedAddressId) {
-        toast({ variant: "destructive", title: "Error", description: "Please select a shipping address." });
-        return;
-    }
+   const createOrderInDb = async () => {
+        if (!user || !selectedAddressId) return;
+        const shippingAddress = addresses.find(a => a.id === selectedAddressId);
+        if (!shippingAddress) return;
 
-    const shippingAddress = addresses.find(a => a.id === selectedAddressId);
-    if (!shippingAddress) {
-        toast({ variant: "destructive", title: "Error", description: "Selected address not found." });
-        return;
-    }
-
-    const newOrder: Omit<Order, 'id' | 'date'> = {
-        userId: user.uid,
-        status: 'Processing',
-        total: total,
-        items: cartItems,
-        shippingAddress: shippingAddress,
-        paymentMethod: paymentMethod,
-    };
-    
-    setIsPlacingOrder(true);
-    try {
-        await addOrder(newOrder);
+        const newOrderData: Omit<Order, 'id' | 'date'> = {
+            userId: user.uid,
+            status: 'Processing',
+            total: total,
+            items: cartItems,
+            shippingAddress: shippingAddress,
+            paymentMethod: paymentMethod,
+        };
+        await addOrder(newOrderData);
         toast({
             title: "Order Placed!",
             description: "Thank you for your purchase. Redirecting to your orders...",
@@ -135,12 +127,73 @@ export default function CheckoutPage() {
         setTimeout(() => {
             router.push('/orders');
         }, 2000);
-    } catch (error) {
-        console.error("Failed to place order:", error);
-        toast({ variant: "destructive", title: "Error", description: "There was a problem placing your order." });
-    } finally {
-        setIsPlacingOrder(false);
+   }
+
+  const handlePayment = async () => {
+    if (!user) {
+        toast({ variant: "destructive", title: "Error", description: "You must be logged in." });
+        return;
     }
+    if (!selectedAddressId) {
+        toast({ variant: "destructive", title: "Error", description: "Please select a shipping address." });
+        return;
+    }
+    
+    setIsPlacingOrder(true);
+    
+    if(paymentMethod === 'cod'){
+        try {
+            await createOrderInDb();
+        } catch(error){
+            console.error("Failed to place order:", error);
+            toast({ variant: "destructive", title: "Error", description: "There was a problem placing your order." });
+        } finally {
+            setIsPlacingOrder(false);
+        }
+        return;
+    }
+    
+    // Handle Online Payment
+    const options = {
+        key: "rzp_test_tahEgudL0qAlVF",
+        amount: total * 100, // amount in the smallest currency unit
+        currency: "INR",
+        name: "Bombay Cloths",
+        description: "Transaction for your clothing order",
+        image: "/logo.png", // Replace with your logo URL
+        handler: async (response: any) => {
+            try {
+                // Here you would typically verify the payment signature on your server
+                // For this example, we'll assume payment is successful
+                console.log("Razorpay Response:", response);
+                await createOrderInDb();
+            } catch (error) {
+                console.error("Failed to process after-payment actions:", error);
+                toast({ variant: "destructive", title: "Error", description: "Payment was successful, but we couldn't place your order." });
+            } finally {
+                setIsPlacingOrder(false);
+            }
+        },
+        prefill: {
+            name: user.displayName || "",
+            email: user.email || "",
+            contact: "" 
+        },
+        notes: {
+            address: addresses.find(a => a.id === selectedAddressId)?.addressLine1,
+        },
+        theme: {
+            color: "#D8262F" // Corresponds to destructive color
+        },
+        modal: {
+            ondismiss: () => {
+                setIsPlacingOrder(false);
+                toast({ variant: "destructive", title: "Payment cancelled", description: "You have cancelled the payment process." });
+            }
+        }
+    };
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
   
   if (authLoading || !user) {
@@ -195,19 +248,19 @@ export default function CheckoutPage() {
                         </div>
                         <div>
                             <Label htmlFor="city">City</Label>
-                            <Input id="city" placeholder="Metropolis" value={newAddress.city} onChange={handleInputChange} />
+                            <Input id="city" placeholder="Mumbai" value={newAddress.city} onChange={handleInputChange} />
                         </div>
                          <div>
                             <Label htmlFor="state">State</Label>
-                            <Input id="state" placeholder="NY" value={newAddress.state} onChange={handleInputChange} />
+                            <Input id="state" placeholder="Maharashtra" value={newAddress.state} onChange={handleInputChange} />
                         </div>
                         <div>
                             <Label htmlFor="zip">ZIP Code</Label>
-                            <Input id="zip" placeholder="10001" value={newAddress.zip} onChange={handleInputChange} />
+                            <Input id="zip" placeholder="400001" value={newAddress.zip} onChange={handleInputChange} />
                         </div>
                          <div>
                             <Label htmlFor="country">Country</Label>
-                            <Input id="country" placeholder="USA" value={newAddress.country} onChange={handleInputChange} />
+                            <Input id="country" value={newAddress.country} onChange={handleInputChange} disabled />
                         </div>
                         <div className="sm:col-span-2 flex justify-end gap-2">
                            {addresses.length > 0 && <Button variant="outline" onClick={() => setShowNewAddressForm(false)}>Cancel</Button> }
@@ -225,30 +278,14 @@ export default function CheckoutPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Payment Method</CardTitle>
-                  <CardDescription>All transactions are secure and encrypted.</CardDescription>
                 </CardHeader>
                 <CardContent>
                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                        <Label htmlFor="card" className="flex items-start space-x-4 p-4 border rounded-md has-[:checked]:bg-accent has-[:checked]:border-primary cursor-pointer">
-                            <RadioGroupItem value="card" id="card" />
+                        <Label htmlFor="online" className="flex items-start space-x-4 p-4 border rounded-md has-[:checked]:bg-accent has-[:checked]:border-primary cursor-pointer">
+                            <RadioGroupItem value="online" id="online" />
                             <div className="w-full">
-                            <p className="font-semibold">Card / Razorpay</p>
-                            <div className="mt-4 grid gap-4">
-                                <div>
-                                    <Label htmlFor="card-number">Card Number</Label>
-                                    <Input id="card-number" placeholder="**** **** **** 1234" disabled={paymentMethod !== 'card'}/>
-                                </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div>
-                                        <Label htmlFor="expiry">Expiry</Label>
-                                        <Input id="expiry" placeholder="MM/YY" disabled={paymentMethod !== 'card'} />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="cvc">CVC</Label>
-                                        <Input id="cvc" placeholder="123" disabled={paymentMethod !== 'card'} />
-                                    </div>
-                                </div>
-                            </div>
+                                <p className="font-semibold">Online (via Razorpay)</p>
+                                <p className="text-sm text-muted-foreground mt-2">Pay securely using UPI, Card, Netbanking, or Wallets.</p>
                             </div>
                         </Label>
                          <Label htmlFor="cod" className="flex items-start space-x-4 p-4 border rounded-md has-[:checked]:bg-accent has-[:checked]:border-primary cursor-pointer">
@@ -274,7 +311,7 @@ export default function CheckoutPage() {
                   {cartItems.map(item => (
                     <div key={item.cartItemId} className="flex justify-between">
                       <span className="text-muted-foreground">{item.name} (x{item.quantity}, {item.selectedSize})</span>
-                      <span>${(item.price * item.quantity).toFixed(2)}</span>
+                      <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -282,26 +319,26 @@ export default function CheckoutPage() {
                 <div className="space-y-2">
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">Subtotal</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>₹{subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">Shipping</span>
-                        <span>${shipping.toFixed(2)}</span>
+                        <span>₹{shipping.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">Taxes</span>
-                        <span>${taxes.toFixed(2)}</span>
+                        <span>₹{taxes.toFixed(2)}</span>
                     </div>
                 </div>
                 <Separator className="my-4"/>
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₹{total.toFixed(2)}</span>
                 </div>
               </CardContent>
               <CardFooter>
-                 <Button size="lg" className="w-full" variant="destructive" onClick={handlePlaceOrder} disabled={cartItems.length === 0 || isPlacingOrder || loadingAddresses}>
-                    {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
+                 <Button size="lg" className="w-full" variant="destructive" onClick={handlePayment} disabled={cartItems.length === 0 || isPlacingOrder || loadingAddresses}>
+                    {isPlacingOrder ? 'Processing...' : (paymentMethod === 'cod' ? 'Place Order' : 'Make Payment')}
                   </Button>
               </CardFooter>
             </Card>

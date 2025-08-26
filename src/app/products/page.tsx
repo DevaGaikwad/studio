@@ -104,8 +104,8 @@ function ProductsPageContent() {
           <div>
             <Label htmlFor="price-range" className="font-semibold">Price Range</Label>
             <div className="flex justify-between items-center mt-2 text-sm">
-              <span>${productFilters.priceRange.min}</span>
-              <span>${priceRange[0]}</span>
+              <span>₹{productFilters.priceRange.min}</span>
+              <span>₹{priceRange[0]}</span>
             </div>
             <Slider
               id="price-range"

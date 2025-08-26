@@ -127,7 +127,7 @@ export default function Home() {
                 <CardFooter className="p-4 bg-card/80 backdrop-blur-sm">
                    <div>
                     <CardTitle className="text-xl font-semibold">Ethnic Collection</CardTitle>
-                    <p className="text-muted-foreground mt-1">Starting at $49</p>
+                    <p className="text-muted-foreground mt-1">Starting at ₹1999</p>
                   </div>
                 </CardFooter>
               </Card>
