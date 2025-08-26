@@ -6,20 +6,9 @@ import { initializeApp, getApps, cert } from 'firebase-admin/app';
 // This is a server-side only file.
 
 const initializeAdminApp = () => {
-    // If running in a local development environment, don't initialize admin app
-    // if service account key is not present.
-    if (process.env.NODE_ENV !== 'production' && !process.env.FIREBASE_SERVICE_ACCOUNT) {
-        try {
-            // Check if the file exists without crashing if it doesn't
-            require.resolve('../../../serviceAccountKey.json');
-        } catch (e) {
-            console.warn("Could not find serviceAccountKey.json. Admin features like user listing will be disabled in local development. This is not an error.");
-            return null;
-        }
-    }
-
-    if (getApps().length > 0 && getApps().find(app => app.name === 'admin')) {
-        return getApps().find(app => app.name === 'admin');
+    const adminAppAlreadyInitialized = getApps().find(app => app.name === 'admin');
+    if (adminAppAlreadyInitialized) {
+        return adminAppAlreadyInitialized;
     }
 
     let serviceAccount: any;
@@ -27,19 +16,19 @@ const initializeAdminApp = () => {
         // This is running on the server, so we can use require.
         serviceAccount = require('../../../serviceAccountKey.json');
     } catch (e) {
-        console.error("Admin SDK setup error: `serviceAccountKey.json` not found.");
-        // In a real app, you might want to handle this more gracefully.
-        // For now, we'll let it fail during development if the file is missing.
-        if (process.env.NODE_ENV === 'production') {
-            throw new Error("serviceAccountKey.json is missing for production build.");
-        }
-        return null; // Exit if service account is not found
+        console.warn("Could not find serviceAccountKey.json. Admin features like user listing will be disabled in local development. This is not an error and is expected if you have not set up a service account.");
+        return null; // Gracefully exit if service account is not found
     }
-
-    // Initialize Firebase Admin SDK if not already initialized
-    return initializeApp({
-        credential: cert(serviceAccount)
-    }, 'admin');
+    
+    try {
+        // Initialize Firebase Admin SDK if not already initialized
+        return initializeApp({
+            credential: cert(serviceAccount)
+        }, 'admin');
+    } catch (error) {
+        console.error("Firebase Admin SDK initialization error:", error);
+        return null;
+    }
 };
 
 
