@@ -30,7 +30,7 @@ export async function getOrders(userId: string): Promise<Order[]> {
 
 // For Admin
 export async function getAllOrders(): Promise<Order[]> {
-    const ordersQuery = query(collectionGroup(db, 'orders'), orderBy('date', 'desc'));
+    const ordersQuery = query(collectionGroup(db, 'orders'));
     const querySnapshot = await getDocs(ordersQuery);
     const ordersList = querySnapshot.docs.map(doc => {
         const data = doc.data() as OrderFromDB;
@@ -41,29 +41,32 @@ export async function getAllOrders(): Promise<Order[]> {
         };
         return order;
     });
-    return ordersList;
+    // Manual sort on the client-side as a fallback
+    return ordersList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
 async function findOrderDocRef(orderId: string) {
-    const ordersQuery = query(collectionGroup(db, 'orders'), where('__name__', '==', orderId));
+    // This is not efficient, but it works without knowing the user ID.
+    // A better approach in a large-scale app would be a root-level `orders` collection.
+    const ordersQuery = query(collectionGroup(db, 'orders'));
     const querySnapshot = await getDocs(ordersQuery);
-    if (!querySnapshot.empty) {
-        // Since order IDs are unique, we can safely take the first result.
-        return querySnapshot.docs[0].ref;
+    for (const doc of querySnapshot.docs) {
+        if(doc.id === orderId) {
+            return doc.ref;
+        }
     }
     return null;
 }
 
 
 export async function getOrderById(orderId: string): Promise<Order | null> {
-    const ordersQuery = query(collectionGroup(db, 'orders'));
-    const querySnapshot = await getDocs(ordersQuery);
-    
-    for (const doc of querySnapshot.docs) {
-        if(doc.id === orderId) {
-            const data = doc.data() as OrderFromDB;
-            return { ...data, id: doc.id, date: data.date.toDate().toISOString() };
-        }
+    const orderDocRef = await findOrderDocRef(orderId);
+    if (!orderDocRef) return null;
+
+    const orderSnap = await getDoc(orderDocRef);
+     if (orderSnap.exists()) {
+        const data = orderSnap.data() as OrderFromDB;
+        return { ...data, id: orderSnap.id, date: data.date.toDate().toISOString() };
     }
     return null;
 }
