@@ -1,7 +1,7 @@
 
 import { db } from '@/lib/firebase';
 import type { Order, OrderFromDB } from '@/lib/types';
-import { collection, collectionGroup, addDoc, getDocs, getDoc, serverTimestamp, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, collectionGroup, addDoc, getDocs, getDoc, serverTimestamp, query, orderBy, doc, updateDoc, where } from 'firebase/firestore';
 
 export async function addOrder(orderData: Omit<Order, 'id' | 'date'>): Promise<string> {
     const ordersCollectionRef = collection(db, 'users', orderData.userId, 'orders');
@@ -44,8 +44,18 @@ export async function getAllOrders(): Promise<Order[]> {
     return ordersList;
 }
 
+async function findOrderDocRef(orderId: string) {
+    const ordersQuery = query(collectionGroup(db, 'orders'), where('__name__', '==', orderId));
+    const querySnapshot = await getDocs(ordersQuery);
+    if (!querySnapshot.empty) {
+        // Since order IDs are unique, we can safely take the first result.
+        return querySnapshot.docs[0].ref;
+    }
+    return null;
+}
+
+
 export async function getOrderById(orderId: string): Promise<Order | null> {
-    // This requires a more complex query since we don't know the user ID
     const ordersQuery = query(collectionGroup(db, 'orders'));
     const querySnapshot = await getDocs(ordersQuery);
     
@@ -58,7 +68,11 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
     return null;
 }
 
-export async function updateOrderStatus(userId: string, orderId: string, status: Order['status']): Promise<void> {
-    const orderDocRef = doc(db, 'users', userId, 'orders', orderId);
-    await updateDoc(orderDocRef, { status });
+export async function updateOrderStatus(orderId: string, status: Order['status']): Promise<void> {
+    const orderDocRef = await findOrderDocRef(orderId);
+     if (orderDocRef) {
+        await updateDoc(orderDocRef, { status });
+    } else {
+        throw new Error("Order not found");
+    }
 }

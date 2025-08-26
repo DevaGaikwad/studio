@@ -49,7 +49,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       if(!order) return;
       setIsUpdating(true);
       try {
-          await updateOrderStatus(order.userId, order.id, status);
+          await updateOrderStatus(order.id, status);
           setOrder(prev => prev ? {...prev, status: status} : null);
           toast({ title: "Status Updated", description: `Order status changed to ${status}.`});
           router.refresh(); // Refresh to show changes if any other part of the page depends on server data
